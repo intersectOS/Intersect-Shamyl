@@ -166,10 +166,11 @@
     .neb-c { width:44%; height:44%; top:32%; right:22%; background: radial-gradient(circle, rgba(212,175,55,.10), transparent 70%); animation-delay:-16s; }
 
     #galaxySvg { width: 100%; height: 100%; overflow: visible; }
-    .orbit-path { fill: none; stroke-width: 1.2; }
-    .orbit-glow { fill: none; }
+    .orbit-path { fill: none; stroke-width: 1.2; pointer-events: none; }
+    .orbit-glow { fill: none; pointer-events: none; }
 
     .planet-node { cursor: pointer; }
+    .planet-node:focus { outline: none; }
     .p-body { transition: transform 0.35s cubic-bezier(.16,1,.3,1); transform-origin: center; transform-box: fill-box; }
     .planet-node:hover .p-body, .planet-node:focus .p-body, .planet-node:active .p-body { transform: scale(1.2); }
     .planet-label {
@@ -429,7 +430,8 @@
 
 <!-- 5. مجرة القطاعات -->
 <div id="galaxy-view">
-    <div class="text-center mb-4 relative z-10">
+    <!-- تم إضافة pointer-events-none لكي لا يمنع العنوان الضغط على الكواكب التي خلفه -->
+    <div class="text-center mb-4 relative z-10 pointer-events-none">
         <div class="text-[10px] font-bold tracking-[5px] text-gray-500 mb-2">SHAMAEL × INTERSECT · HAIL UNIVERSE</div>
         <h2 class="text-3xl md:text-5xl font-black text-white mb-2" style="font-family:var(--ff-display)">القطاعات الاستراتيجية</h2>
         <p class="text-gray-400 text-sm md:text-base">اختر كوكباً لاستكشاف الفرص والمشاريع التطويرية في منطقة حائل</p>
@@ -921,20 +923,23 @@ function buildGalaxySvg(){
         const count = visibleProjects(s.id).length;
         const pathD = `M ${ocx+r},${ocy} A ${r},${r} 0 1,1 ${ocx-r},${ocy} A ${r},${r} 0 1,1 ${ocx+r},${ocy}`;
 
-        let inner = `<circle r="${(pr*2.1).toFixed(1)}" fill="url(#ag${i})"/>`;
+        // إدراج منطقة مخفية كبيرة قابلة للنقر لحل مشكلة الضغط (Hit Area)
+        let inner = `<circle r="${(pr*3.5).toFixed(1)}" fill="transparent" style="cursor:pointer; pointer-events:all;" />`;
+        
+        inner += `<circle r="${(pr*2.1).toFixed(1)}" fill="url(#ag${i})" style="pointer-events:none;"/>`;
         if (hasRing){
-            inner += `<g transform="rotate(-22)">
+            inner += `<g transform="rotate(-22)" style="pointer-events:none;">
                 <ellipse rx="${(pr*1.9).toFixed(1)}" ry="${(pr*0.62).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.32)}" stroke-width="3.4"/>
                 <ellipse rx="${(pr*2.35).toFixed(1)}" ry="${(pr*0.8).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.14)}" stroke-width="1.6"/>
             </g>`;
         }
-        inner += `<circle r="${pr}" fill="url(#pg${i})"/>`;
-        inner += `<ellipse cx="${(-pr*0.32).toFixed(1)}" cy="${(-pr*0.38).toFixed(1)}" rx="${(pr*0.34).toFixed(1)}" ry="${(pr*0.2).toFixed(1)}" fill="rgba(255,255,255,.35)"/>`;
+        inner += `<circle r="${pr}" fill="url(#pg${i})" style="pointer-events:none;"/>`;
+        inner += `<ellipse cx="${(-pr*0.32).toFixed(1)}" cy="${(-pr*0.38).toFixed(1)}" rx="${(pr*0.34).toFixed(1)}" ry="${(pr*0.2).toFixed(1)}" fill="rgba(255,255,255,.35)" style="pointer-events:none;"/>`;
         if (hasRing){
-            inner += `<path d="M ${-(pr*1.9).toFixed(1)} 0 A ${(pr*1.9).toFixed(1)} ${(pr*0.62).toFixed(1)} 0 0 0 ${(pr*1.9).toFixed(1)} 0" transform="rotate(-22)" fill="none" stroke="${hexToRgba(s.color,.45)}" stroke-width="3.4"/>`;
+            inner += `<path d="M ${-(pr*1.9).toFixed(1)} 0 A ${(pr*1.9).toFixed(1)} ${(pr*0.62).toFixed(1)} 0 0 0 ${(pr*1.9).toFixed(1)} 0" transform="rotate(-22)" fill="none" stroke="${hexToRgba(s.color,.45)}" stroke-width="3.4" style="pointer-events:none;"/>`;
         }
         if (hasMoon){
-            inner += `<g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${(7+i*1.6).toFixed(1)}s" repeatCount="indefinite"/><circle cx="${(pr*1.7+6).toFixed(1)}" cy="0" r="2.6" fill="${shade(s.color,.5)}"/></g>`;
+            inner += `<g style="pointer-events:none;"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${(7+i*1.6).toFixed(1)}s" repeatCount="indefinite"/><circle cx="${(pr*1.7+6).toFixed(1)}" cy="0" r="2.6" fill="${shade(s.color,.5)}"/></g>`;
         }
         inner += `<text class="planet-label" y="${(pr+20).toFixed(0)}" text-anchor="middle" fill="${shade(s.color,.55)}">${s.name}</text>`;
         inner += `<text class="planet-count" y="${(pr+35).toFixed(0)}" text-anchor="middle">${count} ${count===1?'مشروع':'مشاريع'}</text>`;
@@ -947,11 +952,11 @@ function buildGalaxySvg(){
 
     /* ---- مذنّبان يعبران السماء ---- */
     svg += `
-    <g opacity="0"><animateMotion dur="9s" begin="4s" repeatCount="indefinite" rotate="auto" path="M -80,150 L 920,440"/>
+    <g opacity="0" style="pointer-events:none;"><animateMotion dur="9s" begin="4s" repeatCount="indefinite" rotate="auto" path="M -80,150 L 920,440"/>
         <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.42;0.55" dur="9s" begin="4s" repeatCount="indefinite"/>
         <line x1="-64" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="2"/><circle r="2.4" fill="#f2f7ff"/>
     </g>
-    <g opacity="0"><animateMotion dur="13s" begin="10s" repeatCount="indefinite" rotate="auto" path="M 900,130 L -100,580"/>
+    <g opacity="0" style="pointer-events:none;"><animateMotion dur="13s" begin="10s" repeatCount="indefinite" rotate="auto" path="M 900,130 L -100,580"/>
         <animate attributeName="opacity" values="0;0.75;0.75;0" keyTimes="0;0.05;0.4;0.52" dur="13s" begin="10s" repeatCount="indefinite"/>
         <line x1="-52" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="1.6"/><circle r="2" fill="#eef3ff"/>
     </g>`;
@@ -1378,3 +1383,4 @@ if (isAdmin) document.getElementById('internalPill').style.display = 'flex';
 </script>
 </body>
 </html>
+
