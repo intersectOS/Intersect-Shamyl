@@ -72,6 +72,27 @@
         filter: drop-shadow(0 0 20px rgba(94, 53, 177, 0.5));
     }
 
+    .brand-dot {
+        width: 9px; height: 9px; border-radius: 50%; background: var(--intersect-gold);
+        box-shadow: 0 0 12px var(--intersect-gold), 0 0 26px rgba(212,175,55,0.4);
+        animation: pulse-dot 2.5s ease-in-out infinite; flex-shrink: 0;
+    }
+    @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.45);opacity:.7;} }
+
+    .hero-eyebrow {
+        font-size: 0.72rem; font-weight: 700; letter-spacing: 4px;
+        color: var(--intersect-gold); opacity: 0.85; margin-bottom: 1rem;
+        border: 1px solid rgba(212,175,55,0.25); border-radius: 100px;
+        padding: 6px 18px; background: rgba(212,175,55,0.06);
+    }
+    .hero-title {
+        font-family: var(--ff-display); font-weight: 700;
+        font-size: clamp(2.2rem, 7vw, 4rem); line-height: 1.35; margin: 0 0 1.1rem;
+        background: linear-gradient(180deg, #fff 30%, #cfd4e6 70%, #9aa0b8);
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 6px 30px rgba(94,53,177,0.35));
+    }
+
     .btn-glow {
         background: linear-gradient(135deg, var(--shamael-purple), var(--shamael-teal));
         color: white; border: none; padding: 14px 42px; border-radius: 100px;
@@ -116,25 +137,73 @@
         padding: 1rem;
     }
 
-    .orbit-wrap { position: relative; width: min(820px, 96vw); aspect-ratio: 1/1; }
+    .orbit-wrap {
+        position: relative; width: min(820px, 96vw); aspect-ratio: 1/1;
+        perspective: 1100px; margin: 0 auto;
+    }
+    #galaxyTilt {
+        position: relative; width: 100%; height: 100%;
+        transform-style: preserve-3d;
+        animation: galaxy-sway 22s ease-in-out infinite alternate;
+        transition: transform .8s cubic-bezier(.16,1,.3,1);
+        will-change: transform;
+    }
+    @keyframes galaxy-sway {
+        0%  { transform: rotateX(13deg) rotateY(-2.5deg); }
+        100%{ transform: rotateX(19deg) rotateY(2.5deg); }
+    }
+    .nebula {
+        position: absolute; border-radius: 50%; pointer-events: none;
+        filter: blur(46px); opacity: .85; mix-blend-mode: screen;
+        animation: neb-drift 26s ease-in-out infinite alternate;
+    }
+    @keyframes neb-drift {
+        0%  { transform: translate(0,0) scale(1); }
+        100%{ transform: translate(4%, -3%) scale(1.08); }
+    }
+    .neb-a { width:54%; height:54%; top:0; left:-8%; background: radial-gradient(circle, rgba(94,53,177,.18), transparent 70%); }
+    .neb-b { width:58%; height:58%; bottom:-6%; right:-9%; background: radial-gradient(circle, rgba(0,172,193,.14), transparent 70%); animation-delay:-9s; }
+    .neb-c { width:44%; height:44%; top:32%; right:22%; background: radial-gradient(circle, rgba(212,175,55,.10), transparent 70%); animation-delay:-16s; }
+
     #galaxySvg { width: 100%; height: 100%; overflow: visible; }
+    .orbit-path { fill: none; stroke-width: 1.2; }
+    .orbit-glow { fill: none; }
 
     .planet-node { cursor: pointer; }
-    .p-body { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: center; transform-box: fill-box; }
-    .planet-node:hover .p-body, .planet-node:focus .p-body { transform: scale(1.22); }
+    .p-body { transition: transform 0.35s cubic-bezier(.16,1,.3,1); transform-origin: center; transform-box: fill-box; }
+    .planet-node:hover .p-body, .planet-node:focus .p-body, .planet-node:active .p-body { transform: scale(1.2); }
     .planet-label {
-        font-family: var(--ff-main); font-size: 14px; font-weight: 800; fill: #fff;
-        pointer-events: none; paint-order: stroke; stroke: rgba(5,5,10,0.85); stroke-width: 3px;
+        font-family: var(--ff-main); font-size: 13.5px; font-weight: 800;
+        pointer-events: none; paint-order: stroke; stroke: rgba(5,5,10,0.8); stroke-width: 3px;
     }
-    .planet-count { font-family: var(--ff-main); font-size: 11px; font-weight: 500; fill: rgba(255,255,255,0.65); pointer-events: none; }
+    .planet-count { font-family: var(--ff-main); font-size: 10.5px; font-weight: 500; fill: rgba(255,255,255,0.55); pointer-events: none; paint-order: stroke; stroke: rgba(5,5,10,0.7); stroke-width: 2.5px; }
+
+    .galaxy-legend {
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+        margin-top: 0.4rem; max-width: 720px; position: relative; z-index: 6;
+    }
+    .legend-pill {
+        display: inline-flex; align-items: center; gap: 7px;
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        color: var(--text); font-family: var(--ff-main); font-weight: 700; font-size: 0.8rem;
+        padding: 7px 15px; border-radius: 100px; cursor: pointer;
+        transition: 0.25s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .legend-pill:hover { border-color: var(--pill-color, var(--shamael-teal)); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 
     /* الهاشتاقات السابحة */
     .hashtag-layer { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; display: none; }
     .floating-tag {
         position: absolute; white-space: nowrap;
         font-family: var(--ff-display); font-weight: 400;
-        color: rgba(255,255,255,0.13); user-select: none;
+        color: rgba(255,255,255,0.1); user-select: none;
         will-change: transform, opacity;
+        text-shadow: 0 0 24px rgba(94,53,177,0.35);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #galaxyTilt, .nebula { animation: none; }
     }
 
     /* ============ تفاصيل القطاع ============ */
@@ -151,19 +220,28 @@
         max-width: 1200px; margin: 1.5rem auto 0; width: 100%;
     }
     .project-card {
-        background: var(--glass-bg); border: 1px solid var(--glass-border);
-        border-radius: 22px; padding: 1.8rem; cursor: pointer; text-align: center;
-        transition: all 0.35s ease; position: relative; overflow: hidden;
+        background: linear-gradient(160deg, rgba(30,24,52,0.55), rgba(12,10,26,0.65));
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border-radius: 26px; padding: 1.9rem 1.7rem; cursor: pointer; text-align: center;
+        transition: all 0.35s cubic-bezier(.16,1,.3,1); position: relative; overflow: hidden;
     }
     .project-card::before {
         content:''; position:absolute; top:0; left:0; right:0; height:3px;
         background: linear-gradient(90deg, transparent, var(--card-color, var(--shamael-teal)), transparent);
         opacity: 0.6;
     }
+    .project-card::after {
+        content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+        width: 220px; height: 120px; border-radius: 50%;
+        background: radial-gradient(ellipse, var(--card-color-alpha), transparent 70%);
+        opacity: 0; transition: opacity 0.4s; pointer-events: none;
+    }
+    .project-card:hover::after { opacity: 1; }
     .project-card:hover {
         border-color: var(--card-color, var(--shamael-teal));
-        transform: translateY(-5px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.55), inset 0 0 24px var(--card-color-alpha);
+        transform: translateY(-6px);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.6), 0 0 0 1px var(--card-color-alpha), inset 0 0 30px var(--card-color-alpha);
     }
     .project-card h3 { font-size: 1.35rem; font-weight: 800; margin: 0.8rem 0 0.5rem; color: #fff; }
     .project-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.2rem; line-height: 1.65; }
@@ -326,15 +404,19 @@
 <!-- 2. واجهة الافتتاح -->
 <div class="ui-layer" id="intro-ui">
     <div class="flex justify-between items-center w-full gap-3">
-        <div class="brand-logo">شمائل × تقاطع</div>
-        <div class="text-xs md:text-sm text-gray-400 font-medium text-left">محفظة الاستثمارات والمشاريع<br><span class="text-[10px] opacity-60">منطقة حائل</span></div>
+        <div class="flex items-center gap-2.5">
+            <span class="brand-dot"></span>
+            <div class="brand-logo">شمائل × تقاطع</div>
+        </div>
+        <div class="text-xs md:text-sm text-gray-400 font-medium text-left">محفظة الاستثمارات والمشاريع<br><span class="text-[10px] opacity-60 tracking-[3px]">HAIL REGION</span></div>
     </div>
 
     <div class="flex flex-col items-center justify-center flex-1 text-center px-2">
-        <h1 class="text-3xl md:text-5xl font-black mb-4 text-white leading-tight">نعيد صياغة المستقبل<br>من قلب المملكة</h1>
+        <div class="hero-eyebrow">الشراكة الاستراتيجية · مذكرة تفاهم ٢٠٢٦</div>
+        <h1 class="hero-title">نعيد صياغة المستقبل<br>من قلب المملكة</h1>
         <p class="text-gray-400 max-w-lg mb-9 text-base md:text-lg leading-relaxed">حائل الأجمل، نعزّز مكانتها وجاذبيتها الاستثمارية عالمياً — نستكشف الفرص، نستقطب التقنيات، ونبني مشاريع تنموية مستدامة.</p>
         <button class="btn-glow" onclick="startZoomJourney()">استكشف عوالم حائل</button>
-        <div class="mt-8 text-[11px] text-gray-500 font-medium tracking-wide">شراكة استراتيجية · الاستثمار والابتكار والتحول الرقمي والتنمية المستدامة</div>
+        <div class="mt-8 text-[11px] text-gray-500 font-medium tracking-wide">الاستثمار · الابتكار · التحول الرقمي · التنمية المستدامة</div>
     </div>
 </div>
 
@@ -348,10 +430,12 @@
 <!-- 5. مجرة القطاعات -->
 <div id="galaxy-view">
     <div class="text-center mb-4 relative z-10">
-        <h2 class="text-3xl md:text-5xl font-black text-white mb-2">القطاعات الاستراتيجية</h2>
-        <p class="text-gray-400 text-sm md:text-base">اختر قطاعاً لاستكشاف الفرص والمشاريع التطويرية في منطقة حائل</p>
+        <div class="text-[10px] font-bold tracking-[5px] text-gray-500 mb-2">SHAMAEL × INTERSECT · HAIL UNIVERSE</div>
+        <h2 class="text-3xl md:text-5xl font-black text-white mb-2" style="font-family:var(--ff-display)">القطاعات الاستراتيجية</h2>
+        <p class="text-gray-400 text-sm md:text-base">اختر كوكباً لاستكشاف الفرص والمشاريع التطويرية في منطقة حائل</p>
     </div>
     <div class="orbit-wrap" id="orbitWrap"></div>
+    <div class="galaxy-legend" id="galaxyLegend"></div>
 </div>
 
 <!-- 6. تفاصيل القطاع -->
@@ -595,11 +679,12 @@ function drawStarfield(){
         const m = shootingStars[i];
         m.x += m.vx; m.y += m.vy; m.life -= 0.018;
         if (m.life <= 0 || m.x > W || m.y > H){ shootingStars.splice(i,1); continue; }
-        const grad = sctx.createLinearGradient(m.x, m.y, m.x - m.vx*9, m.y - m.vy*9);
+        const grad = sctx.createLinearGradient(m.x, m.y, m.x - m.vx*16, m.y - m.vy*16);
         grad.addColorStop(0, `rgba(255,255,255,${m.life})`);
+        grad.addColorStop(0.25, `rgba(232,200,122,${(m.life*0.8).toFixed(2)})`);
         grad.addColorStop(1, 'transparent');
         sctx.strokeStyle = grad; sctx.lineWidth = 1.6*devicePixelRatio;
-        sctx.beginPath(); sctx.moveTo(m.x, m.y); sctx.lineTo(m.x - m.vx*9, m.y - m.vy*9); sctx.stroke();
+        sctx.beginPath(); sctx.moveTo(m.x, m.y); sctx.lineTo(m.x - m.vx*16, m.y - m.vy*16); sctx.stroke();
     }
     requestAnimationFrame(drawStarfield);
 }
@@ -727,67 +812,185 @@ function startZoomJourney(){
 }
 
 /* ==========================================================
-   4. مجرة القطاعات + الهاشتاقات السابحة
+   4. مجرة القطاعات — محرك المشهد الكوني
    ========================================================== */
+function shade(hex, pct){
+    // pct موجب = تفتيح نحو الأبيض، سالب = تعتيم نحو الأسود
+    const n = parseInt(hex.slice(1), 16);
+    let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    const t = pct < 0 ? 0 : 255, p = Math.abs(pct);
+    r = Math.round((t-r)*p)+r; g = Math.round((t-g)*p)+g; b = Math.round((t-b)*p)+b;
+    return `rgb(${r},${g},${b})`;
+}
+
 function buildGalaxySvg(){
-    const cx=410, cy=410;
+    const cx = 410, cy = 410;
+    const sizes = [17, 15, 14, 16, 13, 15.5];
+    // مدارات غير متمركزة تماماً — إحساس كوني عضوي
+    const orbitOffsets = [
+        {ox:0,  oy:0,   r:128}, {ox:28, oy:-18, r:180}, {ox:-26, oy:16, r:228},
+        {ox:20, oy:24,  r:276}, {ox:-24, oy:-22, r:322}, {ox:10, oy:-10, r:364}
+    ];
+
+    /* ---- defs: شمس حائل + تدرجات كروية لكل كوكب + ذيل المذنب ---- */
     let defs = `<defs>
-        <radialGradient id="hailSunGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#fff"/>
-            <stop offset="30%" stop-color="#d4af37"/>
+        <radialGradient id="sunCore" cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#fff8e1"/><stop offset="35%" stop-color="#f5dfa0"/>
+            <stop offset="70%" stop-color="#d4af37"/><stop offset="100%" stop-color="#8a6a2a"/>
+        </radialGradient>
+        <radialGradient id="sunGlow">
+            <stop offset="0%" stop-color="rgba(245,222,160,.55)"/>
+            <stop offset="35%" stop-color="rgba(212,175,55,.22)"/>
             <stop offset="100%" stop-color="rgba(212,175,55,0)"/>
-        </radialGradient>`;
-    DB.sectors.forEach(s => {
-        defs += `<radialGradient id="grad-${s.id}" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stop-color="#fff"/>
-            <stop offset="20%" stop-color="${s.color}"/>
-            <stop offset="100%" stop-color="${hexToRgba(s.color,0.4)}"/>
+        </radialGradient>
+        <linearGradient id="cometTail" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+            <stop offset="100%" stop-color="rgba(220,235,255,.9)"/>
+        </linearGradient>`;
+    DB.sectors.forEach((s,i)=>{
+        const c = s.color;
+        defs += `
+        <radialGradient id="pg${i}" cx="32%" cy="28%" r="85%">
+            <stop offset="0%" stop-color="${shade(c,.62)}"/><stop offset="38%" stop-color="${shade(c,.15)}"/>
+            <stop offset="72%" stop-color="${shade(c,-.35)}"/><stop offset="100%" stop-color="${shade(c,-.68)}"/>
+        </radialGradient>
+        <radialGradient id="ag${i}">
+            <stop offset="0%" stop-color="${hexToRgba(c,.4)}"/>
+            <stop offset="55%" stop-color="${hexToRgba(c,.14)}"/>
+            <stop offset="100%" stop-color="${hexToRgba(c,0)}"/>
         </radialGradient>`;
     });
     defs += `</defs>`;
 
     let svg = `<svg id="galaxySvg" viewBox="0 0 820 820">${defs}`;
 
-    // المدارات
-    [...new Set(DB.sectors.map(s=>s.orbitRadius))].forEach(r => {
-        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 9"/>`;
+    /* ---- نجوم متلألئة في عمق المشهد ---- */
+    svg += `<g opacity="0.9">`;
+    for (let i=0;i<28;i++){
+        const x=Math.random()*820, y=Math.random()*820, r=Math.random()*1.1+0.4;
+        const d=(Math.random()*4+3).toFixed(1), b=(-Math.random()*5).toFixed(1);
+        svg += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#dfe6f5"><animate attributeName="opacity" values="0.12;0.85;0.12" dur="${d}s" begin="${b}s" repeatCount="indefinite"/></circle>`;
+    }
+    svg += `</g>`;
+
+    /* ---- حزام كويكبات يدور ببطء بين المدارات ---- */
+    svg += `<g opacity="0.5"><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="260s" repeatCount="indefinite"/>`;
+    for (let i=0;i<60;i++){
+        const ang = Math.random()*Math.PI*2;
+        const rr = 300 + (Math.random()*16-8);
+        svg += `<circle cx="${(cx+Math.cos(ang)*rr).toFixed(0)}" cy="${(cy+Math.sin(ang)*rr).toFixed(0)}" r="${(Math.random()*1.2+0.5).toFixed(1)}" fill="rgba(210,198,175,${(Math.random()*0.4+0.25).toFixed(2)})"/>`;
+    }
+    svg += `</g>`;
+
+    /* ---- المدارات: توهج خافت + خط منقّط ينساب ---- */
+    DB.sectors.forEach((s,i)=>{
+        const off = orbitOffsets[i % orbitOffsets.length];
+        const ocx = cx+off.ox, ocy = cy+off.oy, r = off.r;
+        svg += `<circle class="orbit-glow" cx="${ocx}" cy="${ocy}" r="${r}" stroke="${hexToRgba(s.color,.06)}" stroke-width="7"/>`;
+        svg += `<circle class="orbit-path" cx="${ocx}" cy="${ocy}" r="${r}" stroke="${hexToRgba(s.color,.32)}" stroke-dasharray="2 9">
+            <animate attributeName="stroke-dashoffset" from="0" to="220" dur="${70+i*15}s" repeatCount="indefinite"/>
+        </circle>`;
     });
 
-    // أشعة شمائل من مركز الشمس (استلهام من الهوية)
+    /* ---- شمس حائل: أشعة شمائل الملونة + هالة نابضة + حلقتا وهج + نواة ذهبية ---- */
+    const fanColors = ['#5e35b1','#00acc1','#43a047','#fb8c00'];
     let rays = '';
-    for (let i=0;i<10;i++){
-        const a = (i/10)*Math.PI*2;
-        rays += `<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(a)*95}" y2="${cy+Math.sin(a)*95}" stroke="rgba(212,175,55,0.14)" stroke-width="2"/>`;
-    }
-    svg += `<g>${rays}
-        <circle cx="${cx}" cy="${cy}" r="62" fill="url(#hailSunGlow)">
-            <animate attributeName="r" values="57;67;57" dur="4s" repeatCount="indefinite"/>
-        </circle>
-        <circle cx="${cx}" cy="${cy}" r="46" fill="#110a1f" stroke="#d4af37" stroke-width="2"/>
-        <text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="'Aref Ruqaa',serif" font-size="32" fill="#d4af37" font-weight="700">حائل</text>
-        <text x="${cx}" y="${cy+27}" text-anchor="middle" font-family="'Tajawal',sans-serif" font-size="11" fill="#fff" opacity="0.7">شمائل × تقاطع</text>
+    fanColors.forEach((c,i)=>{
+        const a1 = (-Math.PI/2) + (i-1.5)*0.38, len = 92;
+        rays += `<path d="M ${cx},${cy} L ${(cx+Math.cos(a1-0.09)*len).toFixed(0)},${(cy+Math.sin(a1-0.09)*len).toFixed(0)} L ${(cx+Math.cos(a1+0.09)*len).toFixed(0)},${(cy+Math.sin(a1+0.09)*len).toFixed(0)} Z" fill="${hexToRgba(c,0.22)}"/>`;
+    });
+    svg += `<g class="sun-group">
+        <g><animate attributeName="opacity" values="0.65;1;0.65" dur="7s" repeatCount="indefinite"/>${rays}</g>
+        <circle cx="${cx}" cy="${cy}" r="74" fill="url(#sunGlow)"><animate attributeName="r" values="68;82;68" dur="6.5s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="44" fill="none" stroke="rgba(212,175,55,.3)" stroke-width="1" stroke-dasharray="3 10"><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="32s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="55" fill="none" stroke="rgba(212,175,55,.16)" stroke-width="1" stroke-dasharray="1 14"><animateTransform attributeName="transform" type="rotate" from="360 ${cx} ${cy}" to="0 ${cx} ${cy}" dur="48s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="31" fill="url(#sunCore)"/>
+        <ellipse cx="${cx-9}" cy="${cy-11}" rx="11" ry="6.5" fill="rgba(255,252,240,.5)"/>
+        <text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="'Aref Ruqaa',serif" font-size="24" fill="#221806" font-weight="700">حائل</text>
     </g>`;
 
-    // الكواكب
-    DB.sectors.forEach(s => {
-        const r = s.orbitRadius;
-        const pathD = `M ${cx+r},${cy} A ${r},${r} 0 1,1 ${cx-r},${cy} A ${r},${r} 0 1,1 ${cx+r},${cy}`;
-        const planetSize = 23;
+    /* ---- الكواكب: كرة مضاءة + غلاف جوي + حلقات وأقمار + الاسم يسبح معها ---- */
+    DB.sectors.forEach((s,i)=>{
+        const off = orbitOffsets[i % orbitOffsets.length];
+        const ocx = cx+off.ox, ocy = cy+off.oy, r = off.r;
+        const dur = 55 + i*12;
+        const beginOff = -(dur * (i / Math.max(DB.sectors.length,1))).toFixed(1);
+        const pr = sizes[i % sizes.length];
+        const hasRing = (i % 3 === 1);
+        const hasMoon = (i % 2 === 0);
         const count = visibleProjects(s.id).length;
-        svg += `
-        <g class="planet-node" role="button" tabindex="0" onclick="openSector('${s.id}')" onkeydown="if(event.key==='Enter')openSector('${s.id}')">
-            <animateMotion dur="${s.speed}s" repeatCount="indefinite" path="${pathD}" begin="-${s.angleOffset}s"/>
-            <g class="p-body">
-                <circle cx="0" cy="0" r="${planetSize*1.8}" fill="${hexToRgba(s.color,0.14)}"/>
-                <circle cx="0" cy="0" r="${planetSize}" fill="url(#grad-${s.id})"/>
-                <text x="0" y="${planetSize+21}" text-anchor="middle" class="planet-label">${s.name}</text>
-                <text x="0" y="${planetSize+36}" text-anchor="middle" class="planet-count">${count} ${count===1?'مشروع':'مشاريع'}</text>
-            </g>
+        const pathD = `M ${ocx+r},${ocy} A ${r},${r} 0 1,1 ${ocx-r},${ocy} A ${r},${r} 0 1,1 ${ocx+r},${ocy}`;
+
+        let inner = `<circle r="${(pr*2.1).toFixed(1)}" fill="url(#ag${i})"/>`;
+        if (hasRing){
+            inner += `<g transform="rotate(-22)">
+                <ellipse rx="${(pr*1.9).toFixed(1)}" ry="${(pr*0.62).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.32)}" stroke-width="3.4"/>
+                <ellipse rx="${(pr*2.35).toFixed(1)}" ry="${(pr*0.8).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.14)}" stroke-width="1.6"/>
+            </g>`;
+        }
+        inner += `<circle r="${pr}" fill="url(#pg${i})"/>`;
+        inner += `<ellipse cx="${(-pr*0.32).toFixed(1)}" cy="${(-pr*0.38).toFixed(1)}" rx="${(pr*0.34).toFixed(1)}" ry="${(pr*0.2).toFixed(1)}" fill="rgba(255,255,255,.35)"/>`;
+        if (hasRing){
+            inner += `<path d="M ${-(pr*1.9).toFixed(1)} 0 A ${(pr*1.9).toFixed(1)} ${(pr*0.62).toFixed(1)} 0 0 0 ${(pr*1.9).toFixed(1)} 0" transform="rotate(-22)" fill="none" stroke="${hexToRgba(s.color,.45)}" stroke-width="3.4"/>`;
+        }
+        if (hasMoon){
+            inner += `<g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${(7+i*1.6).toFixed(1)}s" repeatCount="indefinite"/><circle cx="${(pr*1.7+6).toFixed(1)}" cy="0" r="2.6" fill="${shade(s.color,.5)}"/></g>`;
+        }
+        inner += `<text class="planet-label" y="${(pr+20).toFixed(0)}" text-anchor="middle" fill="${shade(s.color,.55)}">${s.name}</text>`;
+        inner += `<text class="planet-count" y="${(pr+35).toFixed(0)}" text-anchor="middle">${count} ${count===1?'مشروع':'مشاريع'}</text>`;
+
+        svg += `<g class="planet-node" role="button" tabindex="0" onclick="openSector('${s.id}')" onkeydown="if(event.key==='Enter')openSector('${s.id}')">
+            <animateMotion dur="${dur}s" repeatCount="indefinite" path="${pathD}" begin="${beginOff}s"/>
+            <g class="p-body">${inner}</g>
         </g>`;
     });
 
+    /* ---- مذنّبان يعبران السماء ---- */
+    svg += `
+    <g opacity="0"><animateMotion dur="9s" begin="4s" repeatCount="indefinite" rotate="auto" path="M -80,150 L 920,440"/>
+        <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.42;0.55" dur="9s" begin="4s" repeatCount="indefinite"/>
+        <line x1="-64" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="2"/><circle r="2.4" fill="#f2f7ff"/>
+    </g>
+    <g opacity="0"><animateMotion dur="13s" begin="10s" repeatCount="indefinite" rotate="auto" path="M 900,130 L -100,580"/>
+        <animate attributeName="opacity" values="0;0.75;0.75;0" keyTimes="0;0.05;0.4;0.52" dur="13s" begin="10s" repeatCount="indefinite"/>
+        <line x1="-52" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="1.6"/><circle r="2" fill="#eef3ff"/>
+    </g>`;
+
     svg += `</svg>`;
-    document.getElementById('orbitWrap').innerHTML = svg;
+
+    /* السُدُم الملوّنة خلف المجرة + طبقة الميلان ثلاثي الأبعاد */
+    document.getElementById('orbitWrap').innerHTML = `
+        <div class="nebula neb-a"></div>
+        <div class="nebula neb-b"></div>
+        <div class="nebula neb-c"></div>
+        <div id="galaxyTilt">${svg}</div>`;
+    initGalaxyParallax();
+
+    /* أزرار القطاعات — وصول سريع خصوصاً على الجوال */
+    document.getElementById('galaxyLegend').innerHTML = DB.sectors.map(s=>`
+        <button class="legend-pill" style="--pill-color:${s.color}" onclick="openSector('${s.id}')">
+            <span class="legend-dot" style="background:${s.color}; color:${s.color}"></span>${s.name}
+        </button>`).join('');
+}
+
+/* ميلان تفاعلي: الكون يستجيب لحركة الإصبع/المؤشر */
+function initGalaxyParallax(){
+    const wrap = document.getElementById('orbitWrap');
+    if (reduceMotion || wrap.dataset.parallaxBound) return;
+    wrap.dataset.parallaxBound = '1';
+    const onMove = (clientX, clientY)=>{
+        const tilt = document.getElementById('galaxyTilt'); if (!tilt) return;
+        const rect = wrap.getBoundingClientRect();
+        const dx = (clientX - rect.left)/rect.width - 0.5;
+        const dy = (clientY - rect.top)/rect.height - 0.5;
+        tilt.style.animation = 'none';
+        tilt.style.transform = `rotateX(${(16 - dy*10).toFixed(1)}deg) rotateY(${(dx*8).toFixed(1)}deg)`;
+    };
+    wrap.addEventListener('pointermove', e => onMove(e.clientX, e.clientY));
+    wrap.addEventListener('pointerleave', ()=>{
+        const tilt = document.getElementById('galaxyTilt'); if (!tilt) return;
+        tilt.style.transform = ''; tilt.style.animation = '';
+    });
 }
 
 function initHashtags(){
