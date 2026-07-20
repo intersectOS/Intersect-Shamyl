@@ -6,13 +6,16 @@
 <title>حائل عالمية | شمائل × تقاطع</title>
 <meta name="description" content="منصة تفاعلية لمحفظة مشاريع منطقة حائل بالشراكة بين شمائل للتنمية والتطوير وتقاطع القابضة">
 
+<!-- الخطوط -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
+<!-- المكتبات -->
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
     :root {
@@ -42,24 +45,25 @@
         -webkit-font-smoothing: antialiased;
     }
 
-    /* ============ خلفية النجوم الديناميكية ============ */
-    #starfield {
-        position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        display: block; width: 100%; height: 100%;
+    /* ============ الخريطة (Leaflet) ============ */
+    #map-container {
+        position: fixed; inset: 0; z-index: 1;
+        width: 100%; height: 100%;
+        background-color: #000;
     }
+    .leaflet-control-container { display: none !important; }
+
     .noise-overlay {
-        position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.04;
+        position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0.03;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     }
 
-    #globe-container {
-        position: fixed; inset: 0; z-index: 2;
-        display: flex; justify-content: center; align-items: center;
-    }
-
     /* ============ واجهة الافتتاح ============ */
+    #intro-ui {
+        background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%);
+    }
     .ui-layer {
-        position: fixed; inset: 0; z-index: 10; pointer-events: none;
+        position: fixed; inset: 0; z-index: 10;
         display: flex; flex-direction: column; justify-content: space-between;
         padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom));
     }
@@ -69,9 +73,8 @@
         font-family: var(--ff-display); font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 700;
         background: linear-gradient(135deg, var(--shamael-teal), var(--shamael-purple) 60%, var(--intersect-gold));
         -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 20px rgba(94, 53, 177, 0.5));
+        filter: drop-shadow(0 2px 10px rgba(0,0,0,0.9));
     }
-
     .brand-dot {
         width: 9px; height: 9px; border-radius: 50%; background: var(--intersect-gold);
         box-shadow: 0 0 12px var(--intersect-gold), 0 0 26px rgba(212,175,55,0.4);
@@ -80,180 +83,178 @@
     @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.45);opacity:.7;} }
 
     .hero-eyebrow {
-        font-size: 0.72rem; font-weight: 700; letter-spacing: 4px;
-        color: var(--intersect-gold); opacity: 0.85; margin-bottom: 1rem;
-        border: 1px solid rgba(212,175,55,0.25); border-radius: 100px;
-        padding: 6px 18px; background: rgba(212,175,55,0.06);
+        font-size: 0.85rem; font-weight: 800; letter-spacing: 2px;
+        color: #fff; margin-bottom: 1.2rem;
+        border: 1px solid rgba(255,255,255,0.3); border-radius: 100px;
+        padding: 8px 24px; background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        text-shadow: 0 2px 8px rgba(0,0,0,1);
     }
     .hero-title {
         font-family: var(--ff-display); font-weight: 700;
-        font-size: clamp(2.2rem, 7vw, 4rem); line-height: 1.35; margin: 0 0 1.1rem;
-        background: linear-gradient(180deg, #fff 30%, #cfd4e6 70%, #9aa0b8);
-        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 6px 30px rgba(94,53,177,0.35));
+        font-size: clamp(2.5rem, 8vw, 4.5rem); line-height: 1.25; margin: 0 0 0.5rem;
+        color: #fff;
+        text-shadow: 0 4px 16px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.8);
+    }
+    .hero-desc {
+        color: #fff;
+        text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,0.9);
+        font-weight: 600;
+    }
+    .hero-tags {
+        color: #fff;
+        text-shadow: 0 2px 6px rgba(0,0,0,1);
+        font-weight: 700;
     }
 
     .btn-glow {
         background: linear-gradient(135deg, var(--shamael-purple), var(--shamael-teal));
-        color: white; border: none; padding: 14px 42px; border-radius: 100px;
-        font-family: var(--ff-main); font-weight: 700; font-size: 1.1rem;
+        color: white; border: 1px solid rgba(255,255,255,0.2); padding: 16px 48px; border-radius: 100px;
+        font-family: var(--ff-main); font-weight: 800; font-size: 1.2rem;
         cursor: pointer; position: relative; overflow: hidden;
-        box-shadow: 0 8px 30px rgba(94, 53, 177, 0.4);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(94, 53, 177, 0.5);
         transition: transform 0.3s, box-shadow 0.3s;
     }
     .btn-glow:hover, .btn-glow:focus-visible {
-        transform: translateY(-3px) scale(1.04);
-        box-shadow: 0 12px 40px rgba(0, 172, 193, 0.6);
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 30px rgba(0, 172, 193, 0.8);
         outline: none;
     }
-    .btn-glow::after {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
-        transform: translateX(-100%);
-        animation: shine 3.5s infinite;
-    }
-    @keyframes shine { 60% { transform: translateX(100%); } 100% { transform: translateX(100%); } }
 
+    /* ============ النصوص السينمائية ============ */
+    #hail-cinematic-text, #hail-cinematic-sub { display: none; }
     #hail-cinematic-text {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
-        font-family: var(--ff-display); font-size: clamp(3rem, 11vw, 7.5rem); font-weight: 700;
+        position: fixed; top: 48%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+        font-family: var(--ff-display); font-size: clamp(4rem, 14vw, 9rem); font-weight: 700;
         text-align: center; opacity: 0; pointer-events: none; z-index: 20; width: 100%;
-        background: linear-gradient(to bottom, #fff 20%, var(--intersect-gold));
-        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 40px rgba(212,175,55,0.7)) drop-shadow(0 0 90px rgba(251,140,0,0.4));
+        color: #ffffff;
+        text-shadow: 0 4px 20px rgba(0,0,0,1), 0 0 40px rgba(0,0,0,0.9), 0 0 80px rgba(212,175,55,1);
     }
     #hail-cinematic-sub {
-        position: fixed; top: calc(50% + clamp(2.6rem, 8vw, 5.2rem)); left: 50%; transform: translate(-50%, 0);
-        font-family: var(--ff-main); font-weight: 500; letter-spacing: 2px;
-        font-size: clamp(0.85rem, 2.5vw, 1.15rem); color: var(--muted);
+        position: fixed; top: calc(48% + clamp(3rem, 10vw, 6rem)); left: 50%; transform: translate(-50%, 0);
+        font-family: var(--ff-main); font-weight: 800; letter-spacing: 4px;
+        font-size: clamp(1rem, 3vw, 1.5rem); color: #ffffff;
         opacity: 0; pointer-events: none; z-index: 20; white-space: nowrap;
+        text-shadow: 0 2px 10px rgba(0,0,0,1), 0 0 30px rgba(212,175,55,1);
     }
 
-    /* ============ مجرة القطاعات ============ */
+    /* ============ مجرة القطاعات — مكبّرة وقابلة للتمرير ============ */
     #galaxy-view {
         position: fixed; inset: 0; z-index: 5; display: none; opacity: 0;
-        flex-direction: column; align-items: center; justify-content: center;
-        background: radial-gradient(circle at center, rgba(17,10,31,0.85) 0%, rgba(5,5,10,0.6) 100%);
-        padding: 1rem;
+        flex-direction: column; align-items: center; justify-content: flex-start;
+        background: radial-gradient(circle at center, rgba(17,10,31,0.95) 0%, rgba(5,5,10,0.9) 100%);
+        padding: max(1.5rem, env(safe-area-inset-top)) 1rem max(2rem, env(safe-area-inset-bottom));
+        overflow-y: auto; /* الأزرار تحت المجرة تظهر دائماً ويمكن التمرير إليها */
+        -webkit-overflow-scrolling: touch;
+    }
+    #galaxy-view > * { flex-shrink: 0; }
+
+    .galaxy-header { text-align: center; margin-bottom: 0.2rem; position: relative; z-index: 10; width: 100%; }
+
+    /* المجرة أكبر: مربعة دائماً، محكومة بالأصغر بين عرض وارتفاع الشاشة */
+    .orbit-wrap {
+        position: relative;
+        width: min(94vw, 78vh, 900px);
+        aspect-ratio: 1 / 1;
+        perspective: 1200px;
+        margin: -0.5rem auto 0;
+    }
+    @media (max-width: 768px) {
+        .orbit-wrap { width: min(96vw, 70vh); }
     }
 
-    .orbit-wrap {
-        position: relative; width: min(820px, 96vw); aspect-ratio: 1/1;
-        perspective: 1100px; margin: 0 auto;
-    }
     #galaxyTilt {
         position: relative; width: 100%; height: 100%;
         transform-style: preserve-3d;
-        animation: galaxy-sway 22s ease-in-out infinite alternate;
-        transition: transform .8s cubic-bezier(.16,1,.3,1);
+        transition: transform 0.2s ease-out;
         will-change: transform;
-    }
-    @keyframes galaxy-sway {
-        0%  { transform: rotateX(13deg) rotateY(-2.5deg); }
-        100%{ transform: rotateX(19deg) rotateY(2.5deg); }
     }
     .nebula {
         position: absolute; border-radius: 50%; pointer-events: none;
-        filter: blur(46px); opacity: .85; mix-blend-mode: screen;
-        animation: neb-drift 26s ease-in-out infinite alternate;
+        filter: blur(50px); opacity: .7; mix-blend-mode: screen;
+        animation: neb-drift 30s ease-in-out infinite alternate;
     }
-    @keyframes neb-drift {
-        0%  { transform: translate(0,0) scale(1); }
-        100%{ transform: translate(4%, -3%) scale(1.08); }
-    }
-    .neb-a { width:54%; height:54%; top:0; left:-8%; background: radial-gradient(circle, rgba(94,53,177,.18), transparent 70%); }
-    .neb-b { width:58%; height:58%; bottom:-6%; right:-9%; background: radial-gradient(circle, rgba(0,172,193,.14), transparent 70%); animation-delay:-9s; }
-    .neb-c { width:44%; height:44%; top:32%; right:22%; background: radial-gradient(circle, rgba(212,175,55,.10), transparent 70%); animation-delay:-16s; }
+    @keyframes neb-drift { 0% { transform: translate(0,0) scale(1); } 100%{ transform: translate(3%, -2%) scale(1.1); } }
+    .neb-a { width:55%; height:55%; top:0; left:-5%; background: radial-gradient(circle, rgba(94,53,177,.2), transparent 70%); }
+    .neb-b { width:60%; height:60%; bottom:-5%; right:-5%; background: radial-gradient(circle, rgba(0,172,193,.15), transparent 70%); animation-delay:-10s; }
 
     #galaxySvg { width: 100%; height: 100%; overflow: visible; }
-    .orbit-path { fill: none; stroke-width: 1.2; pointer-events: none; }
-    .orbit-glow { fill: none; pointer-events: none; }
+    .orbit-path { fill: none; stroke-width: 1.2; }
+    .orbit-glow { fill: none; }
 
     .planet-node { cursor: pointer; }
-    .planet-node:focus { outline: none; }
-    .p-body { transition: transform 0.35s cubic-bezier(.16,1,.3,1); transform-origin: center; transform-box: fill-box; }
-    .planet-node:hover .p-body, .planet-node:focus .p-body, .planet-node:active .p-body { transform: scale(1.2); }
-    .planet-label {
-        font-family: var(--ff-main); font-size: 13.5px; font-weight: 800;
-        pointer-events: none; paint-order: stroke; stroke: rgba(5,5,10,0.8); stroke-width: 3px;
-    }
-    .planet-count { font-family: var(--ff-main); font-size: 10.5px; font-weight: 500; fill: rgba(255,255,255,0.55); pointer-events: none; paint-order: stroke; stroke: rgba(5,5,10,0.7); stroke-width: 2.5px; }
+    .p-body { transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: center; transform-box: fill-box; }
+    .planet-node:hover .p-body { transform: scale(1.25); }
+    .planet-label { font-family: var(--ff-main); font-size: 17px; font-weight: 800; pointer-events: none; paint-order: stroke; stroke: rgba(0,0,0,0.9); stroke-width: 3.5px; fill: #fff; }
+    .planet-count { font-family: var(--ff-main); font-size: 12.5px; font-weight: 600; fill: rgba(255,255,255,0.75); pointer-events: none; paint-order: stroke; stroke: rgba(0,0,0,0.9); stroke-width: 2.5px; }
 
-    /* التبويبات السفلية */
+    /* ============ الأزرار المائية الزجاجية (القطاعات) ============ */
     .galaxy-legend {
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
-        margin-top: 0.4rem; max-width: 720px; position: relative; z-index: 50;
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+        margin-top: 0.8rem; max-width: 1000px; position: relative; z-index: 10;
+        padding-bottom: 1.5rem;
     }
     .legend-pill {
-        display: inline-flex; align-items: center; gap: 7px;
-        background: var(--glass-bg); border: 1px solid var(--glass-border);
-        color: var(--text); font-family: var(--ff-main); font-weight: 700; font-size: 0.8rem;
-        padding: 7px 15px; border-radius: 100px; cursor: pointer;
-        transition: 0.25s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        position: relative;
+        display: inline-flex; align-items: center; gap: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #c5cad8;
+        font-family: var(--ff-main); font-weight: 800; font-size: 1rem;
+        padding: 13px 28px; border-radius: 100px; cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 14px rgba(0,0,0,0.35);
     }
-    .legend-pill:hover { border-color: var(--pill-color, var(--shamael-teal)); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
-    .legend-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-
-    /* الهاشتاقات السابحة */
-    .hashtag-layer { position: fixed; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; display: none; }
-    .floating-tag {
-        position: absolute; white-space: nowrap;
-        font-family: var(--ff-display); font-weight: 400;
-        color: rgba(255,255,255,0.1); user-select: none;
-        will-change: transform, opacity;
-        text-shadow: 0 0 24px rgba(94,53,177,0.35);
+    .legend-pill:active { transform: scale(0.96); }
+    .legend-pill:hover {
+        border-color: var(--pill-color, var(--shamael-teal));
+        background: rgba(255, 255, 255, 0.07);
+        color: #fff;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px var(--pill-color-alpha);
     }
-
-    /* تأثير الانتقال العنيف (Warp) */
-    #warp-overlay {
-        position: fixed; inset: 0; z-index: 25; pointer-events: none; opacity: 0; 
-        mix-blend-mode: screen; transform-origin: center;
+    .legend-icon {
+        width: 19px; height: 19px;
+        color: var(--pill-color);
+        display: flex; align-items: center; justify-content: center;
+        filter: drop-shadow(0 0 6px var(--pill-color-alpha));
     }
+    .legend-icon svg { width: 100%; height: 100%; }
 
     /* ============ تفاصيل القطاع ============ */
     #sector-details {
-        position: fixed; inset: 0; z-index: 30; 
-        background-color: rgba(5,5,10,0.96);
-        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        position: fixed; inset: 0; z-index: 30; background: rgba(5,5,10,0.95);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
         display: none; opacity: 0; flex-direction: column;
         padding: max(2rem, env(safe-area-inset-top)) 1.5rem 3rem;
         overflow-y: auto;
     }
 
     .project-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.4rem;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;
         max-width: 1200px; margin: 1.5rem auto 0; width: 100%;
     }
     .project-card {
-        background: linear-gradient(160deg, rgba(30,24,52,0.55), rgba(12,10,26,0.65));
+        background: linear-gradient(160deg, rgba(30,24,52,0.6), rgba(12,10,26,0.8));
         border: 1px solid var(--glass-border);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        border-radius: 26px; padding: 1.9rem 1.7rem; cursor: pointer; text-align: center;
-        transition: all 0.35s cubic-bezier(.16,1,.3,1); position: relative; overflow: hidden;
+        border-radius: 26px; padding: 2rem; cursor: pointer; text-align: center;
+        transition: all 0.4s cubic-bezier(.16,1,.3,1); position: relative; overflow: hidden;
     }
     .project-card::before {
-        content:''; position:absolute; top:0; left:0; right:0; height:3px;
+        content:''; position:absolute; top:0; left:0; right:0; height:4px;
         background: linear-gradient(90deg, transparent, var(--card-color, var(--shamael-teal)), transparent);
-        opacity: 0.6;
     }
-    .project-card::after {
-        content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
-        width: 220px; height: 120px; border-radius: 50%;
-        background: radial-gradient(ellipse, var(--card-color-alpha), transparent 70%);
-        opacity: 0; transition: opacity 0.4s; pointer-events: none;
-    }
-    .project-card:hover::after { opacity: 1; }
     .project-card:hover {
         border-color: var(--card-color, var(--shamael-teal));
-        transform: translateY(-6px);
-        box-shadow: 0 18px 44px rgba(0,0,0,0.6), 0 0 0 1px var(--card-color-alpha), inset 0 0 30px var(--card-color-alpha);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 0 1px var(--card-color-alpha), inset 0 0 40px var(--card-color-alpha);
     }
-    .project-card h3 { font-size: 1.35rem; font-weight: 800; margin: 0.8rem 0 0.5rem; color: #fff; }
-    .project-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.2rem; line-height: 1.65; }
+    .project-card h3 { font-size: 1.4rem; font-weight: 800; margin: 1rem 0 0.5rem; color: #fff; }
+    .project-card p { color: var(--muted); font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.6; }
     .project-badge {
-        display: inline-block; padding: 5px 15px; border-radius: 100px;
-        font-size: 0.82rem; font-weight: 700;
+        display: inline-block; padding: 6px 16px; border-radius: 100px;
+        font-size: 0.85rem; font-weight: 700;
         background: var(--card-color-alpha); color: var(--card-color);
         border: 1px solid var(--card-color);
     }
@@ -265,26 +266,27 @@
     }
     .open-project-btn {
         display: inline-flex; align-items: center; gap: 8px;
-        margin-top: 0.3rem; padding: 9px 22px; border-radius: 100px;
-        font-size: 0.9rem; font-weight: 800; text-decoration: none;
+        margin-top: 0.5rem; padding: 10px 24px; border-radius: 100px;
+        font-size: 0.95rem; font-weight: 800; text-decoration: none;
         color: var(--pc, var(--shamael-teal));
         background: var(--pca, rgba(0,172,193,0.15));
         border: 1px solid var(--pc, var(--shamael-teal));
-        transition: 0.25s;
+        transition: 0.3s;
     }
     .open-project-btn:hover {
-        background: var(--pc, var(--shamael-teal)); color: #05050a;
-        box-shadow: 0 6px 22px var(--pca);
+        background: var(--pc, var(--shamael-teal)); color: #fff;
+        box-shadow: 0 8px 25px var(--pca);
         transform: translateY(-2px);
     }
 
     .back-btn {
-        color: var(--muted); cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-        border-radius: 100px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1rem;
-        font-family: var(--ff-main); transition: 0.3s; padding: 8px 20px;
+        color: var(--muted); cursor: pointer; background: none; border: none;
+        display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem;
+        font-family: var(--ff-main); transition: 0.3s; padding: 10px 0;
     }
-    .back-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .back-btn:hover { color: #fff; transform: translateX(5px); }
 
+    /* ============ النوافذ والأدمن ============ */
     .admin-link {
         position: fixed; bottom: 16px; left: 16px; z-index: 40;
         font-size: 12px; color: rgba(255,255,255,0.18); text-decoration: none;
@@ -295,134 +297,123 @@
     .internal-mode-pill {
         position: fixed; top: max(14px, env(safe-area-inset-top)); left: 16px; z-index: 40;
         display: none; align-items: center; gap: 8px;
-        background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.45);
-        color: var(--intersect-gold); font-size: 0.8rem; font-weight: 700;
-        padding: 6px 14px; border-radius: 100px;
+        background: rgba(212,175,55,0.15); border: 1px solid rgba(212,175,55,0.5);
+        color: var(--intersect-gold); font-size: 0.85rem; font-weight: 800;
+        padding: 8px 16px; border-radius: 100px;
+        backdrop-filter: blur(10px);
     }
-    .internal-mode-pill button { background:none; border:none; color:#fff; cursor:pointer; font-family:var(--ff-main); font-size:0.75rem; opacity:0.7; }
-    .internal-mode-pill button:hover { opacity:1; }
+    .internal-mode-pill button { background:none; border:none; color:#fff; cursor:pointer; font-family:var(--ff-main); font-size:0.8rem; margin-right: 8px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 8px;}
+    .internal-mode-pill button:hover { color: #ff5252; }
 
-    /* ============ النوافذ والأدمن ============ */
     .modal-overlay {
-        position: fixed; inset: 0; z-index: 60; background: rgba(3,3,8,0.8);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        position: fixed; inset: 0; z-index: 60; background: rgba(3,3,8,0.85);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         display: none; align-items: center; justify-content: center; padding: 1.2rem;
     }
     .modal-box {
-        width: min(420px, 100%); background: var(--deep);
-        border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+        width: min(450px, 100%); background: var(--deep);
+        border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 2.5rem;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.8);
     }
-    .field-label { display:block; font-size:0.85rem; font-weight:700; color:var(--muted); margin: 0.9rem 0 0.35rem; }
+    .field-label { display:block; font-size:0.9rem; font-weight:700; color:var(--muted); margin: 1rem 0 0.4rem; }
     .field-input, .field-select, .field-textarea {
         width: 100%; background: rgba(255,255,255,0.05); color: #fff;
         border: 1px solid var(--glass-border); border-radius: 12px;
-        padding: 10px 14px; font-family: var(--ff-main); font-size: 0.95rem;
+        padding: 12px 16px; font-family: var(--ff-main); font-size: 1rem;
+        transition: 0.3s;
     }
-    .field-input:focus, .field-select:focus, .field-textarea:focus { outline: none; border-color: var(--shamael-teal); }
+    .field-input:focus, .field-select:focus, .field-textarea:focus { outline: none; border-color: var(--shamael-teal); box-shadow: 0 0 15px rgba(0,172,193,0.3); }
     .field-select option { background: var(--deep); }
-    .field-textarea { resize: vertical; min-height: 80px; }
+    .field-textarea { resize: vertical; min-height: 90px; }
 
     .btn-primary {
         background: linear-gradient(135deg, var(--shamael-purple), var(--shamael-teal));
-        color:#fff; border:none; border-radius: 12px; padding: 11px 22px;
-        font-family: var(--ff-main); font-weight: 800; font-size: 0.95rem; cursor: pointer;
-        transition: 0.25s;
+        color:#fff; border:none; border-radius: 12px; padding: 12px 24px;
+        font-family: var(--ff-main); font-weight: 800; font-size: 1rem; cursor: pointer;
+        transition: 0.3s; box-shadow: 0 4px 15px rgba(94, 53, 177, 0.4);
     }
-    .btn-primary:hover { filter: brightness(1.15); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 172, 193, 0.6); }
     .btn-ghost {
-        background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--glass-border);
-        border-radius: 12px; padding: 11px 22px; font-family: var(--ff-main); font-weight: 700;
-        font-size: 0.95rem; cursor: pointer; transition: 0.25s;
+        background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--glass-border);
+        border-radius: 12px; padding: 12px 24px; font-family: var(--ff-main); font-weight: 700;
+        font-size: 1rem; cursor: pointer; transition: 0.3s;
     }
-    .btn-ghost:hover { color:#fff; border-color: rgba(255,255,255,0.3); }
-    .btn-danger { background: rgba(229,57,53,0.15); color:#ef9a9a; border:1px solid rgba(229,57,53,0.4); border-radius:10px; padding:7px 14px; font-family:var(--ff-main); font-weight:700; font-size:0.82rem; cursor:pointer; }
-    .btn-danger:hover { background: rgba(229,57,53,0.3); color:#fff; }
-    .btn-mini { background: rgba(255,255,255,0.07); color:#fff; border:1px solid var(--glass-border); border-radius:10px; padding:7px 14px; font-family:var(--ff-main); font-weight:700; font-size:0.82rem; cursor:pointer; }
-    .btn-mini:hover { border-color: var(--shamael-teal); }
+    .btn-ghost:hover { color:#fff; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); }
+    .btn-danger { background: rgba(229,57,53,0.15); color:#ef9a9a; border:1px solid rgba(229,57,53,0.4); border-radius:10px; padding:8px 16px; font-family:var(--ff-main); font-weight:700; font-size:0.85rem; cursor:pointer; }
+    .btn-danger:hover { background: rgba(229,57,53,0.4); color:#fff; }
+    .btn-mini { background: rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:8px 16px; font-family:var(--ff-main); font-weight:700; font-size:0.85rem; cursor:pointer; transition: 0.2s;}
+    .btn-mini:hover { border-color: var(--shamael-teal); background: rgba(0,172,193,0.2); }
 
-    /* لوحة التحكم */
     #admin-panel {
         position: fixed; inset: 0; z-index: 50; background: var(--void);
         display: none; flex-direction: column; overflow: hidden;
     }
     .admin-header {
-        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem;
-        padding: max(1.2rem, env(safe-area-inset-top)) 1.5rem 1rem;
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+        padding: max(1.5rem, env(safe-area-inset-top)) 2rem 1.2rem;
         border-bottom: 1px solid var(--glass-border);
+        background: rgba(13, 8, 25, 0.8); backdrop-filter: blur(10px);
     }
-    .admin-tabs { display: flex; gap: 6px; flex-wrap: wrap; padding: 0.9rem 1.5rem 0; }
+    .admin-tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 1rem 2rem 0; }
     .admin-tab {
         background: none; border: 1px solid transparent; color: var(--muted);
-        font-family: var(--ff-main); font-weight: 700; font-size: 0.92rem;
-        padding: 9px 18px; border-radius: 100px; cursor: pointer; transition: 0.25s;
+        font-family: var(--ff-main); font-weight: 700; font-size: 0.95rem;
+        padding: 10px 20px; border-radius: 100px; cursor: pointer; transition: 0.3s;
     }
-    .admin-tab.active { color: #fff; background: rgba(94,53,177,0.25); border-color: rgba(94,53,177,0.6); }
-    .admin-body { flex: 1; overflow-y: auto; padding: 1.2rem 1.5rem 4rem; }
+    .admin-tab.active { color: #fff; background: rgba(94,53,177,0.3); border-color: rgba(94,53,177,0.8); }
+    .admin-body { flex: 1; overflow-y: auto; padding: 1.5rem 2rem 5rem; }
 
     .admin-card {
-        background: var(--glass-bg); border: 1px solid var(--glass-border);
-        border-radius: 18px; padding: 1.3rem 1.4rem; margin-bottom: 1rem;
+        background: var(--glass-bg); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;
     }
-    .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
-    .vis-chip { font-size: 0.72rem; font-weight: 800; padding: 3px 11px; border-radius: 100px; }
-    .vis-public { background: rgba(67,160,71,0.15); color: #81c784; border: 1px solid rgba(67,160,71,0.45); }
-    .vis-internal { background: rgba(212,175,55,0.12); color: var(--intersect-gold); border: 1px dashed rgba(212,175,55,0.5); }
+    .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .vis-chip { font-size: 0.75rem; font-weight: 800; padding: 4px 12px; border-radius: 100px; }
+    .vis-public { background: rgba(67,160,71,0.2); color: #81c784; border: 1px solid rgba(67,160,71,0.5); }
+    .vis-internal { background: rgba(212,175,55,0.15); color: var(--intersect-gold); border: 1px dashed rgba(212,175,55,0.6); }
 
-    .update-item {
-        border-right: 2px solid var(--shamael-teal);
-        padding: 0.5rem 1rem 0.5rem 0; margin: 0.7rem 0.3rem;
-    }
-    .update-date { font-size: 0.75rem; color: var(--shamael-teal); font-weight: 800; }
-    .update-text { font-size: 0.92rem; color: var(--text); margin-top: 3px; line-height: 1.6; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-box { background: var(--glass-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 1.3rem; text-align: center; }
+    .stat-num { font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, var(--shamael-teal), var(--intersect-gold)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .stat-label { font-size: 0.9rem; color: var(--muted); font-weight: 700; }
 
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-    .stat-box { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 18px; padding: 1.2rem; text-align: center; }
-    .stat-num { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, var(--shamael-teal), var(--intersect-gold)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-    .stat-label { font-size: 0.85rem; color: var(--muted); font-weight: 700; }
+    .update-item { border-right: 3px solid var(--shamael-teal); padding: 0.5rem 1rem 0.5rem 0; margin: 0.8rem 0.3rem; }
+    .update-date { font-size: 0.8rem; color: var(--shamael-teal); font-weight: 800; }
+    .update-text { font-size: 0.95rem; color: var(--text); margin-top: 4px; line-height: 1.6; }
 
     .toast {
-        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
         background: var(--deep); border: 1px solid var(--shamael-teal); color: #fff;
-        padding: 12px 26px; border-radius: 100px; font-weight: 700; font-size: 0.9rem;
-        z-index: 100; opacity: 0; transition: 0.4s; pointer-events: none;
-        box-shadow: 0 10px 40px rgba(0,172,193,0.3);
+        padding: 14px 30px; border-radius: 100px; font-weight: 800; font-size: 1rem;
+        z-index: 100; opacity: 0; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;
+        box-shadow: 0 15px 50px rgba(0,172,193,0.4);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    @media (prefers-reduced-motion: reduce) {
-        .btn-glow::after { animation: none; }
-    }
-    @media (max-width: 640px) {
-        .planet-label { font-size: 16px; }
-        .admin-body { padding: 1rem 1rem 4rem; }
-    }
 </style>
 </head>
 <body>
 
-<canvas id="starfield"></canvas>
 <div class="noise-overlay"></div>
 
-<!-- 1. مشهد الكرة الأرضية -->
-<div id="globe-container"></div>
+<!-- 1. مشهد الخريطة الحقيقية (Leaflet) -->
+<div id="map-container"></div>
 
 <!-- 2. واجهة الافتتاح -->
 <div class="ui-layer" id="intro-ui">
     <div class="flex justify-between items-center w-full gap-3">
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-3">
             <span class="brand-dot"></span>
-            <div class="brand-logo">شمائل × تقاطع</div>
+            <div class="brand-logo" style="text-shadow: 0 4px 12px rgba(0,0,0,1);">شمائل × تقاطع</div>
         </div>
-        <div class="text-xs md:text-sm text-gray-400 font-medium text-left">محفظة الاستثمارات والمشاريع<br><span class="text-[10px] opacity-60 tracking-[3px]">HAIL REGION</span></div>
+        <div class="text-xs md:text-sm text-gray-300 font-bold text-left" style="text-shadow: 0 2px 8px rgba(0,0,0,1);">محفظة الاستثمارات والمشاريع<br><span class="text-[10px] opacity-80 tracking-[3px]">HAIL REGION</span></div>
     </div>
 
     <div class="flex flex-col items-center justify-center flex-1 text-center px-2">
         <div class="hero-eyebrow">الشراكة الاستراتيجية · مذكرة تفاهم ٢٠٢٦</div>
         <h1 class="hero-title">نعيد صياغة المستقبل<br>من قلب المملكة</h1>
-        <p class="text-gray-400 max-w-lg mb-9 text-base md:text-lg leading-relaxed">حائل الأجمل، نعزّز مكانتها وجاذبيتها الاستثمارية عالمياً — نستكشف الفرص، نستقطب التقنيات، ونبني مشاريع تنموية مستدامة.</p>
-        <button class="btn-glow" onclick="startZoomJourney()">استكشف عوالم حائل</button>
-        <div class="mt-8 text-[11px] text-gray-500 font-medium tracking-wide">الاستثمار · الابتكار · التحول الرقمي · التنمية المستدامة</div>
+        <p class="hero-desc max-w-2xl mb-10 text-lg md:text-xl leading-relaxed">حائل الأجمل، نعزّز مكانتها وجاذبيتها الاستثمارية عالمياً — نستكشف الفرص، نستقطب التقنيات، ونبني مشاريع تنموية مستدامة.</p>
+        <button class="btn-glow" onclick="startZoomJourney()">اكتشف عالم حائل</button>
+        <div class="hero-tags mt-10 text-sm tracking-widest text-gray-300">الاستثمار · الابتكار · التحول الرقمي · التنمية المستدامة</div>
     </div>
 </div>
 
@@ -430,68 +421,84 @@
 <div id="hail-cinematic-text">حائل عالمية</div>
 <div id="hail-cinematic-sub">HAIL GOES GLOBAL · CRAZY DREAM</div>
 
-<!-- 4. طبقة الهاشتاقات السابحة -->
-<div class="hashtag-layer" id="hashtagLayer"></div>
-
-<!-- 5. تأثير الدخول للقطاعات (Warp Effect) -->
-<div id="warp-overlay"></div>
-
-<!-- 6. مجرة القطاعات -->
+<!-- 4. مجرة القطاعات -->
 <div id="galaxy-view">
-    <div class="text-center mb-4 relative z-10 pointer-events-none mt-4 md:mt-0">
-        <div class="text-[10px] font-bold tracking-[5px] text-gray-500 mb-2">SHAMAEL × INTERSECT · HAIL UNIVERSE</div>
-        <h2 class="text-3xl md:text-5xl font-black text-white mb-2" style="font-family:var(--ff-display)">القطاعات الاستراتيجية</h2>
-        <p class="text-gray-400 text-sm md:text-base">اختر كوكباً لاستكشاف الفرص والمشاريع التطويرية في منطقة حائل</p>
+    <div class="galaxy-header">
+        <div class="text-[11px] font-black tracking-[6px] mb-2 opacity-80" style="color:var(--intersect-gold)">SHAMAEL × INTERSECT</div>
+        <h2 class="text-3xl md:text-5xl font-black text-white mb-2" style="font-family:var(--ff-display); text-shadow: 0 4px 20px rgba(0,0,0,0.8);">القطاعات الاستراتيجية</h2>
+        <p class="text-gray-300 text-sm md:text-base font-bold">اضغط على كوكب أو زر القطاع لاستكشاف الفرص والمشاريع</p>
     </div>
     <div class="orbit-wrap" id="orbitWrap"></div>
+    <!-- الأزرار المائية للقطاعات -->
     <div class="galaxy-legend" id="galaxyLegend"></div>
 </div>
 
-<!-- 7. تفاصيل القطاع -->
+<!-- 5. تفاصيل القطاع -->
 <div id="sector-details">
     <div class="max-w-[1200px] mx-auto w-full">
-        <!-- زر العودة -->
         <button class="back-btn" onclick="closeSectorDetails()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            العودة للمجرة العظمى
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            العودة للمجرة
         </button>
 
-        <div class="text-center mb-10 mt-6 relative z-10">
-            <h2 id="sd-title" class="text-4xl md:text-5xl font-black text-white mb-3" style="font-family:var(--ff-display); text-shadow: 0 4px 30px rgba(0,0,0,0.5);"></h2>
-            <p id="sd-desc" class="text-gray-200 max-w-2xl mx-auto text-base md:text-lg leading-relaxed font-medium"></p>
+        <div class="text-center mb-10 mt-8">
+            <h2 id="sd-title" class="text-4xl md:text-5xl font-black text-white mb-4" style="text-shadow: 0 4px 15px rgba(0,0,0,0.6);"></h2>
+            <p id="sd-desc" class="text-gray-300 max-w-3xl mx-auto text-lg md:text-xl leading-relaxed font-medium"></p>
         </div>
 
-        <div id="sd-projects" class="project-grid relative z-10"></div>
+        <div id="sd-projects" class="project-grid"></div>
     </div>
 </div>
 
 <!-- شارة الوضع الداخلي -->
 <div class="internal-mode-pill" id="internalPill">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     الوضع الداخلي مفعّل
-    <button onclick="adminLogout()">خروج</button>
+    <button onclick="adminLogout()">تسجيل الخروج</button>
 </div>
 
 <button class="admin-link" onclick="openLogin()">دخول الفريق (Admin)</button>
 
-<!-- نوافذ المودال (الأدمن) -->
+<!-- نافذة تسجيل الدخول -->
 <div class="modal-overlay" id="loginModal">
     <div class="modal-box">
-        <h3 class="text-xl font-black text-white mb-1">لوحة تحكم الشراكة</h3>
-        <p class="text-sm text-gray-400 mb-2">مساحة داخلية لفريقي شمائل وتقاطع — إدارة المحفظة وتحديثات الاجتماع الأسبوعي.</p>
+        <h3 class="text-2xl font-black text-white mb-2">لوحة تحكم الشراكة</h3>
+        <p class="text-base text-gray-400 mb-6">مساحة داخلية لفريقي شمائل وتقاطع — إدارة المحفظة وتحديثات الاجتماع الأسبوعي.</p>
         <label class="field-label" for="loginPass">كلمة المرور</label>
         <input type="password" id="loginPass" class="field-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-        <p id="loginError" class="text-red-400 text-sm mt-2" style="display:none">كلمة المرور غير صحيحة</p>
-        <div class="flex gap-3 mt-5">
+        <p id="loginError" class="text-red-400 text-sm mt-3 font-bold" style="display:none">كلمة المرور غير صحيحة</p>
+        <div class="flex gap-4 mt-8">
             <button class="btn-primary flex-1" onclick="doLogin()">دخول</button>
-            <button class="btn-ghost" onclick="closeModal('loginModal')">إلغاء</button>
+            <button class="btn-ghost flex-1" onclick="closeModal('loginModal')">إلغاء</button>
         </div>
     </div>
 </div>
 
+<!-- نافذة القطاع (إضافة/تعديل) -->
+<div class="modal-overlay" id="sectorModal">
+    <div class="modal-box" style="width:min(500px,100%);">
+        <h3 class="text-2xl font-black text-white mb-4" id="sectorModalTitle">قطاع جديد</h3>
+        <input type="hidden" id="sm-id">
+        <label class="field-label">اسم القطاع</label>
+        <input class="field-input" id="sm-name" placeholder="مثال: قطاع التعليم">
+        <label class="field-label">لون الكوكب والزر (Hex)</label>
+        <div class="flex gap-2 items-center">
+            <input type="color" id="sm-color-picker" class="h-10 w-12 rounded cursor-pointer border-none bg-transparent" onchange="document.getElementById('sm-color').value = this.value">
+            <input class="field-input flex-1" id="sm-color" placeholder="#ffffff" onchange="document.getElementById('sm-color-picker').value = this.value">
+        </div>
+        <label class="field-label">الوصف</label>
+        <textarea class="field-textarea" id="sm-desc" placeholder="وصف مقتضب للقطاع..."></textarea>
+        <div class="flex gap-4 mt-8">
+            <button class="btn-primary flex-1" onclick="saveSector()">حفظ القطاع</button>
+            <button class="btn-ghost flex-1" onclick="closeModal('sectorModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة المشروع (إضافة/تعديل) -->
 <div class="modal-overlay" id="projectModal">
-    <div class="modal-box" style="width:min(520px,100%); max-height:90vh; overflow-y:auto;">
-        <h3 class="text-xl font-black text-white" id="projectModalTitle">مشروع جديد</h3>
+    <div class="modal-box" style="width:min(550px,100%); max-height:90vh; overflow-y:auto;">
+        <h3 class="text-2xl font-black text-white mb-4" id="projectModalTitle">مشروع جديد</h3>
         <input type="hidden" id="pm-id">
         <label class="field-label">اسم المشروع</label>
         <input class="field-input" id="pm-name" placeholder="مثال: الصيدلية الذكية">
@@ -501,431 +508,386 @@
         <textarea class="field-textarea" id="pm-desc" placeholder="وصف موجز للمشروع وقيمته"></textarea>
         <label class="field-label">رابط الملف التفاعلي (GitHub Pages)</label>
         <input class="field-input" id="pm-link" dir="ltr" placeholder="https://intersectos.github.io/...">
-        <label class="field-label">الحالة / الوسم</label>
+        <label class="field-label">الوسم / الحالة</label>
         <input class="field-input" id="pm-tag" placeholder="جاهز للعرض · تحت الدراسة · فرصة استثمارية">
-        <label class="field-label">الظهور</label>
+        <label class="field-label">مستوى الظهور</label>
         <select class="field-select" id="pm-vis">
             <option value="public">عام — يظهر للجميع (تسويق الفرص)</option>
-            <option value="internal">داخلي — يظهر للفريق فقط</option>
+            <option value="internal">داخلي — يظهر للفريق في الاجتماعات فقط</option>
         </select>
-        <div class="flex gap-3 mt-6">
-            <button class="btn-primary flex-1" onclick="saveProject()">حفظ</button>
-            <button class="btn-ghost" onclick="closeModal('projectModal')">إلغاء</button>
+        <div class="flex gap-4 mt-8">
+            <button class="btn-primary flex-1" onclick="saveProject()">حفظ المشروع</button>
+            <button class="btn-ghost flex-1" onclick="closeModal('projectModal')">إلغاء</button>
         </div>
     </div>
 </div>
 
+<!-- نافذة تحديث اجتماع -->
 <div class="modal-overlay" id="updateModal">
     <div class="modal-box">
-        <h3 class="text-xl font-black text-white mb-1">تحديث جديد</h3>
-        <p class="text-sm text-gray-400" id="updateModalProject"></p>
+        <h3 class="text-2xl font-black text-white mb-2">تحديث جديد</h3>
+        <p class="text-base font-bold mb-6" style="color:var(--intersect-gold)" id="updateModalProject"></p>
         <input type="hidden" id="um-project">
-        <label class="field-label">التاريخ</label>
+        <label class="field-label">تاريخ الاجتماع</label>
         <input type="date" class="field-input" id="um-date">
-        <label class="field-label">التحديث / القرار</label>
+        <label class="field-label">ما تم مناقشته / القرارات</label>
         <textarea class="field-textarea" id="um-text" placeholder="ما تم إنجازه، القرارات، الخطوات القادمة..."></textarea>
-        <div class="flex gap-3 mt-5">
-            <button class="btn-primary flex-1" onclick="saveUpdate()">إضافة</button>
-            <button class="btn-ghost" onclick="closeModal('updateModal')">إلغاء</button>
+        <div class="flex gap-4 mt-8">
+            <button class="btn-primary flex-1" onclick="saveUpdate()">إضافة التحديث</button>
+            <button class="btn-ghost flex-1" onclick="closeModal('updateModal')">إلغاء</button>
         </div>
     </div>
 </div>
 
-<!-- 8. لوحة التحكم -->
+<!-- 7. لوحة التحكم -->
 <div id="admin-panel">
     <div class="admin-header">
         <div>
-            <div class="brand-logo" style="font-size:1.3rem">لوحة تحكم حائل عالمية</div>
-            <div class="text-xs text-gray-500 mt-1">شمائل للتنمية والتطوير × تقاطع القابضة</div>
+            <div class="brand-logo" style="font-size:1.5rem">لوحة تحكم حائل عالمية</div>
+            <div class="text-sm text-gray-400 mt-1 font-bold">شمائل للتنمية والتطوير × تقاطع القابضة</div>
         </div>
-        <div class="flex gap-2">
-            <button class="btn-mini" onclick="closeAdmin()">عرض المنصة</button>
-            <button class="btn-danger" onclick="adminLogout()">تسجيل الخروج</button>
+        <div class="flex gap-3 mt-4 sm:mt-0">
+            <button class="btn-ghost py-2" onclick="closeAdmin()">عرض المنصة</button>
+            <button class="btn-danger py-2" onclick="adminLogout()">تسجيل الخروج</button>
         </div>
     </div>
     <div class="admin-tabs">
         <button class="admin-tab active" data-tab="overview" onclick="switchTab('overview')">نظرة عامة</button>
-        <button class="admin-tab" data-tab="projects" onclick="switchTab('projects')">المشاريع</button>
+        <button class="admin-tab" data-tab="sectors" onclick="switchTab('sectors')">القطاعات (الكواكب)</button>
+        <button class="admin-tab" data-tab="projects" onclick="switchTab('projects')">المشاريع والفرص</button>
         <button class="admin-tab" data-tab="meetings" onclick="switchTab('meetings')">الاجتماع الأسبوعي</button>
-        <button class="admin-tab" data-tab="settings" onclick="switchTab('settings')">الإعدادات</button>
+        <button class="admin-tab" data-tab="settings" onclick="switchTab('settings')">إعدادات النظام</button>
     </div>
     <div class="admin-body" id="adminBody"></div>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<!-- مشغل الصوت المسجل -->
-<audio id="welcome-audio" preload="auto">
-    <!-- هنا تم ربط الملف الذي أرسلته لي، تأكد أن يكون بجانب ملف الـ HTML -->
-    <source src="ScreenRecording_07-20-2026 02-33-09_1.mp3" type="audio/mpeg">
-</audio>
-
 <script>
 /* ==========================================================
-   0. مخزن البيانات (localStorage + بيانات افتراضية)
+   0. مخزن البيانات (localStorage)
    ========================================================== */
-const STORAGE_KEY = 'hail_global_platform_v1';
+const STORAGE_KEY = 'hail_global_platform_v3';
 const SESSION_KEY = 'hail_admin_session';
-const DEFAULT_PASS_HASH = 'b274f11c62e0f32d4f875377531c96c0eee2137f24de739812af14fc5d04b2e1';
+const DEFAULT_PASS_HASH = 'b274f11c62e0f32d4f875377531c96c0eee2137f24de739812af14fc5d04b2e1'; // Hail@2026
+
+/* الأيقونات النيون (SVG) الخاصة بكل قطاع */
+const SECTOR_ICONS = {
+    'health': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+    'tourism': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>',
+    'tech': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>',
+    'realestate': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="22"></line><line x1="15" y1="22" x2="15" y2="22"></line><line x1="9" y1="6" x2="9" y2="6"></line><line x1="15" y1="6" x2="15" y2="6"></line><line x1="9" y1="10" x2="9" y2="10"></line><line x1="15" y1="10" x2="15" y2="10"></line><line x1="9" y1="14" x2="9" y2="14"></line><line x1="15" y1="14" x2="15" y2="14"></line><line x1="9" y1="18" x2="9" y2="18"></line><line x1="15" y1="18" x2="15" y2="18"></line></svg>',
+    'agri': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4-4 8-9 8-14a7 7 0 0 0-14 0c0 5 4 10 8 14z"></path><line x1="12" y1="22" x2="12" y2="12"></line></svg>',
+    'logistics': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>'
+};
 
 const DEFAULT_DATA = {
     passHash: DEFAULT_PASS_HASH,
-    soundEnabled: true, // إضافة خيار تشغيل الصوت برمجياً
-    hashtags: ['حائل الأجمل','حائل الأذكى','حائل تستثمر','حائل تصنع','حائل تزرع','حائل سياحية','حائل عالمية','Crazy Dream'],
     sectors: [
-        { id:'health', name:'قطاع الصحة', color:'#00acc1', orbitRadius:150, speed:38, angleOffset:0,
-          desc:'تطوير مشاريع الرعاية الصحية الذكية ونقل التقنيات الطبية المتقدمة لرفع جودة الحياة في المنطقة.' },
-        { id:'tourism', name:'السياحة والترفيه', color:'#fb8c00', orbitRadius:216, speed:52, angleOffset:0,
-          desc:'استثمار الطبيعة الخلابة والإرث المسجل في اليونسكو لبناء وجهات سياحية وترفيهية متفردة — أهلاً بالعالم في حائل.' },
-        { id:'tech', name:'التقنية والابتكار', color:'#43a047', orbitRadius:216, speed:52, angleOffset:26,
-          desc:'توطين التقنيات الحديثة والذكاء الاصطناعي والمدن الذكية والبنية التحتية الرقمية ضمن مذكرة التفاهم.' },
-        { id:'realestate', name:'العقار والأصول البلدية', color:'#5e35b1', orbitRadius:282, speed:68, angleOffset:0,
-          desc:'تعظيم العائد من الأصول العقارية والمواقع الاستثمارية لشمائل وتطويرها بأساليب البناء الحديثة.' },
-        { id:'agri', name:'الزراعة والاستدامة', color:'#8bc34a', orbitRadius:282, speed:68, angleOffset:34,
-          desc:'لُبٌّ وتربة — تعزيز الأمن الغذائي والثروات الطبيعية ومشاريع الاستدامة والطاقة المتجددة.' },
-        { id:'logistics', name:'الصناعة واللوجستيات', color:'#d4af37', orbitRadius:348, speed:84, angleOffset:0,
-          desc:'تطوير البنية اللوجستية والصناعية الذكية انطلاقاً من موقع حائل كنقطة وصل بين مناطق المملكة.' }
+        { id:'health', name:'قطاع الصحة', color:'#00acc1', desc:'تطوير مشاريع الرعاية الصحية الذكية ونقل التقنيات الطبية المتقدمة لرفع جودة الحياة في المنطقة.' },
+        { id:'tourism', name:'السياحة والترفيه', color:'#fb8c00', desc:'استثمار الطبيعة الخلابة والإرث المسجل في اليونسكو لبناء وجهات سياحية وترفيهية متفردة.' },
+        { id:'tech', name:'التقنية والابتكار', color:'#43a047', desc:'توطين التقنيات الحديثة والذكاء الاصطناعي والمدن الذكية والبنية التحتية الرقمية.' },
+        { id:'realestate', name:'العقار والأصول البلدية', color:'#5e35b1', desc:'تعظيم العائد من الأصول العقارية والمواقع الاستثمارية وتطويرها بأساليب البناء الحديثة.' },
+        { id:'agri', name:'الزراعة والاستدامة', color:'#8bc34a', desc:'تعزيز الأمن الغذائي والثروات الطبيعية ومشاريع الاستدامة والطاقة المتجددة.' },
+        { id:'logistics', name:'الصناعة واللوجستيات', color:'#d4af37', desc:'تطوير البنية اللوجستية والصناعية الذكية انطلاقاً من موقع حائل المركزي.' }
     ],
     projects: [
         { id:'p1', sectorId:'health', name:'الصيدلية الذكية', tag:'جاهز للعرض', visibility:'public', link:'https://intersectos.github.io/Smart-pharmacy-project-/', desc:'نموذج صيدلية الحي الذكية المؤتمتة بالكامل، تقدم صرف الأدوية والاستشارات عن بعد على مدار الساعة.', updates:[] },
         { id:'p2', sectorId:'health', name:'مجمع العيادات التخصصية', tag:'تحت الدراسة', visibility:'internal', link:'', desc:'مركز طبي متكامل يضم أحدث تقنيات التشخيص، يتم تطويره بالشراكة مع مشغلين دوليين.', updates:[] },
-        { id:'p3', sectorId:'tourism', name:'منتزه المغواة الترفيهي', tag:'فرصة استثمارية', visibility:'public', link:'', desc:'تطوير مواقع المغواة (١، ٢، ٥، ٦) لتصبح الوجهة الأولى لاستضافة الفعاليات والمهرجانات الكبرى.', updates:[] },
-        { id:'p4', sectorId:'tourism', name:'مدينة رالي حائل', tag:'جاري التنسيق مع وزارة السياحة', visibility:'internal', link:'', desc:'مشروع نوعي لاستثمار الشغف الرياضي وجعل حائل عاصمة رياضة المحركات في المنطقة.', updates:[] },
-        { id:'p5', sectorId:'realestate', name:'برج حائل المركزي', tag:'مقترح مقر واستثمار إداري', visibility:'public', link:'', desc:'برج تجاري من ١٢ طابقاً في قلب المنطقة المركزية، مركز للأعمال بمكاتب إدارية ومحلات ومواقف.', updates:[] },
-        { id:'p6', sectorId:'realestate', name:'المدينة الاستثمارية — حدري البلاد', tag:'تحت إجراءات الاستثمار', visibility:'internal', link:'', desc:'تطوير الحي التراثي بمشاريع فندقية ومطاعم ذات طابع تقليدي وثقافي على مساحة ٦٨٢ ألف م².', updates:[] },
-        { id:'p7', sectorId:'logistics', name:'توسعة المنطقة الصناعية', tag:'طرح قريب', visibility:'public', link:'', desc:'أراضٍ خام على طريق القصيم (٥.٦ مليون م²) للصناعات المتقدمة والخدمات اللوجستية الذكية.', updates:[] },
-        { id:'p8', sectorId:'tech', name:'مكتب حائل للاستثمار والابتكار', tag:'مبادرة مشتركة', visibility:'internal', link:'', desc:'مكتب مشترك لتنسيق المبادرات والهاكاثونات واستقبال المستثمرين وإدارة العلاقات مع الشركاء.', updates:[] },
-        { id:'p9', sectorId:'agri', name:'واحة الأمن الغذائي', tag:'تحت الدراسة', visibility:'internal', link:'', desc:'استثمار المياه الجوفية ومزارع التمور والحبوب في مشاريع زراعية تقنية مستدامة.', updates:[] }
+        { id:'p3', sectorId:'tourism', name:'منتزه المغواة الترفيهي', tag:'فرصة استثمارية', visibility:'public', link:'', desc:'تطوير مواقع المغواة لتصبح الوجهة الأولى لاستضافة الفعاليات والمهرجانات الكبرى.', updates:[] },
+        { id:'p4', sectorId:'tourism', name:'مدينة رالي حائل', tag:'جاري التنسيق', visibility:'internal', link:'', desc:'مشروع نوعي لاستثمار الشغف الرياضي وجعل حائل عاصمة رياضة المحركات في المنطقة.', updates:[] },
+        { id:'p5', sectorId:'realestate', name:'برج حائل المركزي', tag:'متاح للاستثمار', visibility:'public', link:'', desc:'برج تجاري إداري في قلب المنطقة المركزية، مركز للأعمال بمكاتب ومحلات ومواقف.', updates:[] },
+        { id:'p6', sectorId:'realestate', name:'المدينة الاستثمارية — حدري البلاد', tag:'قيد التخطيط', visibility:'internal', link:'', desc:'تطوير الحي التراثي بمشاريع فندقية ومطاعم ذات طابع تقليدي وثقافي.', updates:[] },
+        { id:'p7', sectorId:'logistics', name:'توسعة المنطقة الصناعية', tag:'طرح قريب', visibility:'public', link:'', desc:'أراضٍ خام على طريق القصيم للصناعات المتقدمة والخدمات اللوجستية الذكية.', updates:[] },
+        { id:'p8', sectorId:'tech', name:'مكتب حائل للاستثمار والابتكار', tag:'مبادرة مشتركة', visibility:'internal', link:'', desc:'مكتب مشترك لتنسيق المبادرات واستقبال المستثمرين وإدارة العلاقات مع الشركاء.', updates:[] }
     ]
 };
 
 let DB = loadData();
-if (typeof DB.soundEnabled === 'undefined') DB.soundEnabled = true; // لضمان التوافق مع البيانات القديمة المحفوظة
 let isAdmin = sessionStorage.getItem(SESSION_KEY) === '1';
+if (isAdmin) document.getElementById('internalPill').style.display = 'flex';
 
 function loadData(){
-    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { const d = JSON.parse(raw); if (d && d.sectors && d.projects) return d; } } catch(e){}
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) { const d = JSON.parse(raw); if (d && d.sectors && d.projects) return d; }
+    } catch(e){ console.warn('storage read failed', e); }
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
-function saveData(){ try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); } catch(e){ showToast('تعذر الحفظ محلياً'); } }
-async function sha256(str){ const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600); }
-function hexToRgba(hex, alpha){ const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
+function saveData(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); } catch(e){ showToast('تعذر الحفظ محلياً'); }
+}
+async function sha256(str){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+function hexToRgba(hex, alpha){
+    const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 const visibleProjects = sid => DB.projects.filter(p => p.sectorId===sid && (isAdmin || p.visibility==='public'));
 
 /* ==========================================================
-   1. نظام تشغيل الملف الصوتي
+   1. مشهد الخريطة الحقيقية (Leaflet)
    ========================================================== */
-function playWelcomeSound() {
-    if (!DB.soundEnabled) return; // تحقق من إعدادات الأدمن
-    const audio = document.getElementById('welcome-audio');
-    if (audio) {
-        audio.currentTime = 0;
-        audio.volume = 1.0;
-        audio.play().catch(e => console.log('الصوت يحتاج تفاعل من المستخدم', e));
-    }
-}
+const map = L.map('map-container', {
+    zoomControl: false, attributionControl: false, scrollWheelZoom: false,
+    doubleClickZoom: false, touchZoom: false, dragging: false, keyboard: false,
+    zoomAnimation: true, fadeAnimation: true, markerZoomAnimation: true
+}).setView([25.0, 45.0], 3);
 
-/* ==========================================================
-   2. خلفية النجوم (Canvas 2D)
-   ========================================================== */
-const sfCanvas = document.getElementById('starfield');
-const sctx = sfCanvas.getContext('2d');
-let stars = [], shootingStars = [], W=0, H=0;
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function initStarfield(){
-    W = sfCanvas.width = window.innerWidth * devicePixelRatio;
-    H = sfCanvas.height = window.innerHeight * devicePixelRatio;
-    sfCanvas.style.width = window.innerWidth+'px';
-    sfCanvas.style.height = window.innerHeight+'px';
-    const count = Math.min(320, Math.floor(window.innerWidth * window.innerHeight / 3800));
-    stars = Array.from({length: count}, () => ({
-        x: Math.random()*W, y: Math.random()*H,
-        r: (Math.random()*1.3 + 0.3) * devicePixelRatio,
-        tw: Math.random()*Math.PI*2,
-        twSpeed: 0.008 + Math.random()*0.025,
-        drift: 0.02 + Math.random()*0.06,
-        hue: Math.random() < 0.75 ? '255,255,255' : (Math.random()<0.5 ? '0,172,193' : '212,175,55')
-    }));
-}
-function spawnShootingStar(){
-    if (reduceMotion) return;
-    shootingStars.push({
-        x: Math.random()*W*0.8, y: Math.random()*H*0.35,
-        vx: (5+Math.random()*5)*devicePixelRatio, vy: (2.4+Math.random()*2.4)*devicePixelRatio, life: 1
-    });
-}
-function drawStarfield(){
-    sctx.clearRect(0,0,W,H);
-    for (const s of stars){
-        s.tw += s.twSpeed;
-        if (!reduceMotion){ s.y += s.drift; if (s.y > H) { s.y = 0; s.x = Math.random()*W; } }
-        const a = 0.35 + Math.sin(s.tw)*0.3;
-        sctx.beginPath(); sctx.fillStyle = `rgba(${s.hue},${a.toFixed(2)})`; sctx.arc(s.x, s.y, s.r, 0, Math.PI*2); sctx.fill();
-    }
-    for (let i=shootingStars.length-1; i>=0; i--){
-        const m = shootingStars[i];
-        m.x += m.vx; m.y += m.vy; m.life -= 0.018;
-        if (m.life <= 0 || m.x > W || m.y > H){ shootingStars.splice(i,1); continue; }
-        const grad = sctx.createLinearGradient(m.x, m.y, m.x - m.vx*16, m.y - m.vy*16);
-        grad.addColorStop(0, `rgba(255,255,255,${m.life})`); grad.addColorStop(1, 'transparent');
-        sctx.strokeStyle = grad; sctx.lineWidth = 1.6*devicePixelRatio;
-        sctx.beginPath(); sctx.moveTo(m.x, m.y); sctx.lineTo(m.x - m.vx*16, m.y - m.vy*16); sctx.stroke();
-    }
-    requestAnimationFrame(drawStarfield);
-}
-initStarfield(); drawStarfield(); setInterval(()=>{ if (Math.random()<0.5) spawnShootingStar(); }, 3400);
-window.addEventListener('resize', initStarfield);
-
-/* ==========================================================
-   3. الكرة الأرضية الواقعية المتقدمة (Three.js)
-   ========================================================== */
-const container = document.getElementById('globe-container');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.z = 200; 
-
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-container.appendChild(renderer.domElement);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-const dl = new THREE.DirectionalLight(0xffffff, 0.8); dl.position.set(50, 20, 50); scene.add(dl);
-const pl1 = new THREE.PointLight(0x5e35b1, 1.5, 300); pl1.position.set(100, 100, 150); scene.add(pl1);
-const pl2 = new THREE.PointLight(0x00acc1, 1.2, 300); pl2.position.set(-100, -100, 150); scene.add(pl2);
-
-const globeGroup = new THREE.Group(); scene.add(globeGroup);
-const radius = 60;
-
-const textureLoader = new THREE.TextureLoader();
-const earthMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg');
-
-const earthGeo = new THREE.SphereGeometry(radius, 64, 64);
-const earthMat = new THREE.MeshPhongMaterial({ map: earthMap, specular: new THREE.Color(0x333333), shininess: 15 });
-const earthMesh = new THREE.Mesh(earthGeo, earthMat);
-globeGroup.add(earthMesh);
-
-const atmosGeo = new THREE.SphereGeometry(radius * 1.05, 64, 64);
-const atmosMat = new THREE.MeshBasicMaterial({ color: 0x00acc1, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, side: THREE.BackSide });
-globeGroup.add(new THREE.Mesh(atmosGeo, atmosMat));
-
-function getCoordinates(lat, lon, r) {
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lon + 180) * (Math.PI / 180);
-    return new THREE.Vector3(-(r * Math.sin(phi) * Math.cos(theta)), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta));
-}
-
-const hailLat = 27.5, hailLon = 41.7;
-const markerPos = getCoordinates(hailLat, hailLon, radius * 1.01);
-const markerGroup = new THREE.Group();
-markerGroup.position.copy(markerPos);
-markerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), markerPos.clone().normalize());
-globeGroup.add(markerGroup);
-
-const ring = new THREE.Mesh(
-    new THREE.RingGeometry(0.8, 2.5, 32),
-    new THREE.MeshBasicMaterial({ color:0xfb8c00, side:THREE.DoubleSide, transparent:true, opacity:0.9, blending: THREE.AdditiveBlending })
-);
-ring.rotation.x = Math.PI/2; markerGroup.add(ring);
-const core = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-markerGroup.add(core);
-
-gsap.to(ring.scale, { x: 2.8, y: 2.8, z: 2.8, duration: 1.5, repeat: -1, yoyo: false, ease: 'power1.out' });
-gsap.to(ring.material, { opacity: 0, duration: 1.5, repeat: -1, yoyo: false, ease: 'power1.out' });
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19
+}).addTo(map);
 
 let isJourneyStarted = false;
-(function animate(){
-    requestAnimationFrame(animate);
-    if (!isJourneyStarted){
-        globeGroup.rotation.y += 0.0015;
-        globeGroup.rotation.x = 0.2;
-    }
-    renderer.render(scene, camera);
-})();
+let currentLng = 45.0;
+let lastTime = 0;
 
-function fitCamera(){
-    camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    if (!isJourneyStarted) camera.position.z = window.innerWidth < 768 ? 250 : 200;
+function autoPanMap(time) {
+    if (isJourneyStarted) return;
+    if (lastTime !== 0) {
+        const delta = time - lastTime;
+        currentLng -= (0.003 * (delta / 16));
+        map.panTo([25.0, currentLng], { animate: false });
+    }
+    lastTime = time;
+    requestAnimationFrame(autoPanMap);
 }
-window.addEventListener('resize', fitCamera); if (window.innerWidth < 768) camera.position.z = 250;
+map.whenReady(() => { requestAnimationFrame(autoPanMap); });
+
+const shamaelIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: `<div style="position:relative; width:40px; height:40px;">
+             <div style="position:absolute; width:20px; height:20px; background:var(--intersect-gold); border-radius:50%; top:10px; left:10px; box-shadow:0 0 15px var(--intersect-gold); z-index:2;"></div>
+             <div style="position:absolute; width:40px; height:40px; border:2px solid var(--intersect-gold); border-radius:50%; animation:pulse-dot 1.5s infinite;"></div>
+           </div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
 
 /* ==========================================================
-   4. الرحلة السينمائية (الدوران ثم الزووم العميق)
+   2. الرحلة السينمائية للزوم
    ========================================================== */
-function startZoomJourney(){
+function startZoomJourney() {
     if (isJourneyStarted) return;
     isJourneyStarted = true;
 
-    // تشغيل الملف الصوتي
-    playWelcomeSound();
+    gsap.to("#intro-ui", { opacity: 0, duration: 0.5, onComplete: () => {
+        document.getElementById('intro-ui').style.display = 'none';
+    }});
 
-    gsap.to('#intro-ui', { opacity:0, duration:0.5, onComplete: () => { document.getElementById('intro-ui').style.display = 'none'; } });
+    map.flyTo([23.8859, 45.0792], 6, { duration: 2.5, easeLinearity: 0.25 });
 
-    // إحداثيات الدوران لحائل
-    const phi = (90-hailLat)*(Math.PI/180);
-    const theta = (hailLon+180)*(Math.PI/180);
-    
-    // الزوايا النهائية للتركيز على حائل
-    const targetRotY = -theta + Math.PI/2;
-    const targetRotX = phi - Math.PI/2;
+    setTimeout(() => {
+        map.flyTo([27.52, 41.7], 11, { duration: 3, easeLinearity: 0.25 });
+    }, 2500);
 
-    // لجعل الكرة الأرضية تدور لفة كاملة على محورها قبل أن تتوقف عند المملكة
-    // نقوم بإضافة 360 درجة (Math.PI * 2) إلى الزاوية النهائية
-    const spins = 1;
-    const finalRotY = targetRotY + (Math.PI * 2 * spins);
+    const shamaelCoords = [27.505460, 41.697938];
+    setTimeout(() => {
+        map.flyTo(shamaelCoords, 17, { duration: 3.5, easeLinearity: 0.1 });
+        setTimeout(() => {
+            L.marker(shamaelCoords, {icon: shamaelIcon}).addTo(map);
+            document.getElementById('hail-cinematic-text').style.display = 'block';
+            document.getElementById('hail-cinematic-sub').style.display = 'block';
+            gsap.to('#hail-cinematic-text', { opacity: 1, scale: 1, duration: 1.5, ease: 'back.out(1.5)' });
+            gsap.to('#hail-cinematic-sub', { opacity: 1, duration: 1, ease: 'power2.out', delay: 0.5 });
+        }, 2000);
+    }, 5500);
 
-    const tl = gsap.timeline();
-
-    // المرحلة الأولى: دوران الكرة على محورها والتوقف البطيء عند السعودية
-    tl.to(globeGroup.rotation, { 
-        y: finalRotY, 
-        x: targetRotX, 
-        duration: 3.5, 
-        ease: 'power2.inOut' 
-    }, 0);
-    
-    tl.to(camera.position, { 
-        z: 110, // الزووم الأول لخريطة المملكة
-        duration: 3.5, 
-        ease: 'power2.inOut' 
-    }, 0);
-
-    // المرحلة الثانية: الزووم العميق جداً نحو النقطة المضيئة (منطقة حائل)
-    tl.to(camera.position, { 
-        z: 62.5, // زووم قوي للداخل
-        duration: 2.5, 
-        ease: 'power3.inOut' 
-    }, 3.5);
-
-    // إظهار النص السينمائي
-    tl.to('#hail-cinematic-text', { opacity:1, scale:1, duration:1.2, ease:'back.out(1.5)' }, 4.5);
-    tl.to('#hail-cinematic-sub', { opacity:0.85, duration:1, ease:'power2.out' }, 4.9);
-
-    // الانتقال لعالم المجرة
-    tl.to(['#hail-cinematic-text', '#hail-cinematic-sub'], {
-        opacity:0, scale:1.8, filter:'blur(15px)', duration:1, ease:'power2.in'
-    }, 7.5);
-    tl.to('#globe-container', {
-        opacity:0, duration:1,
-        onComplete: () => { container.style.display='none'; initGalaxy(); }
-    }, 7.7);
+    setTimeout(() => {
+        gsap.to(['#hail-cinematic-text', '#hail-cinematic-sub'], {
+            opacity: 0, scale: 1.5, filter: 'blur(10px)', duration: 1, ease:'power2.in',
+            onComplete: () => {
+                document.getElementById('hail-cinematic-text').style.display = 'none';
+                document.getElementById('hail-cinematic-sub').style.display = 'none';
+            }
+        });
+        gsap.to('#map-container', { opacity: 0, duration: 1.2, onComplete: () => {
+            document.getElementById('map-container').style.display = 'none';
+            initGalaxy();
+        }});
+    }, 11500);
 }
 
 /* ==========================================================
-   5. مجرة القطاعات — محرك المشهد الكوني
+   3. مجرة القطاعات — مكبّرة + حركة JS مضمونة الضغط على الجوال
    ========================================================== */
-function shade(hex, pct){
-    const n = parseInt(hex.slice(1), 16); let r = (n>>16)&255, g = (n>>8)&255, b = n&255;
-    const t = pct < 0 ? 0 : 255, p = Math.abs(pct);
-    r = Math.round((t-r)*p)+r; g = Math.round((t-g)*p)+g; b = Math.round((t-b)*p)+b;
-    return `rgb(${r},${g},${b})`;
-}
+let planetAnims = [];
+let planetRafId = null;
 
 function buildGalaxySvg(){
-    const cx = 410, cy = 410;
-    const sizes = [17, 15, 14, 16, 13, 15.5];
-    const orbitOffsets = [{ox:0,oy:0,r:128}, {ox:28,oy:-18,r:180}, {ox:-26,oy:16,r:228}, {ox:20,oy:24,r:276}, {ox:-24,oy:-22,r:322}, {ox:10,oy:-10,r:364}];
+    const cx = 425, cy = 425;
+
+    // مدارات أوسع لتعبئة المشهد
+    const orbitRadii = [];
+    const baseRadius = 150;
+    const step = 47;
+    for (let i=0; i<DB.sectors.length; i++) orbitRadii.push(baseRadius + (i * step));
 
     let defs = `<defs>
-        <radialGradient id="sunCore" cx="35%" cy="30%" r="80%"><stop offset="0%" stop-color="#fff8e1"/><stop offset="35%" stop-color="#f5dfa0"/><stop offset="70%" stop-color="#d4af37"/><stop offset="100%" stop-color="#8a6a2a"/></radialGradient>
-        <radialGradient id="sunGlow"><stop offset="0%" stop-color="rgba(245,222,160,.55)"/><stop offset="35%" stop-color="rgba(212,175,55,.22)"/><stop offset="100%" stop-color="rgba(212,175,55,0)"/></radialGradient>
-        <linearGradient id="cometTail" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(220,235,255,.9)"/></linearGradient>`;
+        <radialGradient id="sunCore" cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stop-color="#fff8e1"/><stop offset="35%" stop-color="#f5dfa0"/>
+            <stop offset="70%" stop-color="#d4af37"/><stop offset="100%" stop-color="#8a6a2a"/>
+        </radialGradient>
+        <radialGradient id="sunGlow">
+            <stop offset="0%" stop-color="rgba(245,222,160,.55)"/>
+            <stop offset="35%" stop-color="rgba(212,175,55,.25)"/>
+            <stop offset="100%" stop-color="rgba(212,175,55,0)"/>
+        </radialGradient>`;
     DB.sectors.forEach((s,i)=>{
-        const c = s.color;
-        defs += `<radialGradient id="pg${i}" cx="32%" cy="28%" r="85%"><stop offset="0%" stop-color="${shade(c,.62)}"/><stop offset="38%" stop-color="${shade(c,.15)}"/><stop offset="72%" stop-color="${shade(c,-.35)}"/><stop offset="100%" stop-color="${shade(c,-.68)}"/></radialGradient>
-                 <radialGradient id="ag${i}"><stop offset="0%" stop-color="${hexToRgba(c,.4)}"/><stop offset="55%" stop-color="${hexToRgba(c,.14)}"/><stop offset="100%" stop-color="${hexToRgba(c,0)}"/></radialGradient>`;
+        defs += `
+        <radialGradient id="pg${i}" cx="32%" cy="28%" r="85%">
+            <stop offset="0%" stop-color="#fff"/><stop offset="25%" stop-color="${s.color}"/>
+            <stop offset="85%" stop-color="${hexToRgba(s.color,0.4)}"/><stop offset="100%" stop-color="#000"/>
+        </radialGradient>
+        <radialGradient id="ag${i}">
+            <stop offset="0%" stop-color="${hexToRgba(s.color,.5)}"/>
+            <stop offset="50%" stop-color="${hexToRgba(s.color,.15)}"/>
+            <stop offset="100%" stop-color="${hexToRgba(s.color,0)}"/>
+        </radialGradient>`;
     });
     defs += `</defs>`;
 
-    let svg = `<svg id="galaxySvg" viewBox="0 0 820 820">${defs}<g opacity="0.9">`;
-    for (let i=0;i<28;i++){
-        const x=Math.random()*820, y=Math.random()*820, r=Math.random()*1.1+0.4, d=(Math.random()*4+3).toFixed(1), b=(-Math.random()*5).toFixed(1);
-        svg += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#dfe6f5"><animate attributeName="opacity" values="0.12;0.85;0.12" dur="${d}s" begin="${b}s" repeatCount="indefinite"/></circle>`;
-    }
-    svg += `</g><g opacity="0.5"><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="260s" repeatCount="indefinite"/>`;
-    for (let i=0;i<60;i++){
-        const ang = Math.random()*Math.PI*2, rr = 300 + (Math.random()*16-8);
-        svg += `<circle cx="${(cx+Math.cos(ang)*rr).toFixed(0)}" cy="${(cy+Math.sin(ang)*rr).toFixed(0)}" r="${(Math.random()*1.2+0.5).toFixed(1)}" fill="rgba(210,198,175,${(Math.random()*0.4+0.25).toFixed(2)})"/>`;
+    /* viewBox مقصوص قليلاً حتى تبدو المجرة أكبر داخل الإطار */
+    let svg = `<svg id="galaxySvg" viewBox="30 30 790 790">${defs}`;
+
+    // النجوم في الخلفية
+    svg += `<g opacity="0.8">`;
+    for (let i=0;i<40;i++){
+        const x=Math.random()*850, y=Math.random()*850, r=Math.random()*1.2+0.5;
+        const d=(Math.random()*3+2).toFixed(1), b=(-Math.random()*4).toFixed(1);
+        svg += `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#fff"><animate attributeName="opacity" values="0.1;0.9;0.1" dur="${d}s" begin="${b}s" repeatCount="indefinite"/></circle>`;
     }
     svg += `</g>`;
 
+    // المدارات
     DB.sectors.forEach((s,i)=>{
-        const off = orbitOffsets[i%orbitOffsets.length], ocx = cx+off.ox, ocy = cy+off.oy, r = off.r;
-        svg += `<circle class="orbit-glow" cx="${ocx}" cy="${ocy}" r="${r}" stroke="${hexToRgba(s.color,.06)}" stroke-width="7"/><circle class="orbit-path" cx="${ocx}" cy="${ocy}" r="${r}" stroke="${hexToRgba(s.color,.32)}" stroke-dasharray="2 9"><animate attributeName="stroke-dashoffset" from="0" to="220" dur="${70+i*15}s" repeatCount="indefinite"/></circle>`;
+        const r = orbitRadii[i];
+        svg += `<circle class="orbit-glow" cx="${cx}" cy="${cy}" r="${r}" stroke="${hexToRgba(s.color,.1)}" stroke-width="4"/>`;
+        svg += `<circle class="orbit-path" cx="${cx}" cy="${cy}" r="${r}" stroke="${hexToRgba(s.color,.4)}" stroke-dasharray="2 8">
+            <animate attributeName="stroke-dashoffset" from="0" to="200" dur="${60+i*10}s" repeatCount="indefinite"/>
+        </circle>`;
     });
 
-    const fanColors = ['#5e35b1','#00acc1','#43a047','#fb8c00']; let rays = '';
-    fanColors.forEach((c,i)=>{ const a1 = (-Math.PI/2) + (i-1.5)*0.38, len = 92; rays += `<path d="M ${cx},${cy} L ${(cx+Math.cos(a1-0.09)*len).toFixed(0)},${(cy+Math.sin(a1-0.09)*len).toFixed(0)} L ${(cx+Math.cos(a1+0.09)*len).toFixed(0)},${(cy+Math.sin(a1+0.09)*len).toFixed(0)} Z" fill="${hexToRgba(c,0.22)}"/>`; });
-    svg += `<g class="sun-group"><g><animate attributeName="opacity" values="0.65;1;0.65" dur="7s" repeatCount="indefinite"/>${rays}</g><circle cx="${cx}" cy="${cy}" r="74" fill="url(#sunGlow)"><animate attributeName="r" values="68;82;68" dur="6.5s" repeatCount="indefinite"/></circle><circle cx="${cx}" cy="${cy}" r="44" fill="none" stroke="rgba(212,175,55,.3)" stroke-width="1" stroke-dasharray="3 10"><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="32s" repeatCount="indefinite"/></circle><circle cx="${cx}" cy="${cy}" r="55" fill="none" stroke="rgba(212,175,55,.16)" stroke-width="1" stroke-dasharray="1 14"><animateTransform attributeName="transform" type="rotate" from="360 ${cx} ${cy}" to="0 ${cx} ${cy}" dur="48s" repeatCount="indefinite"/></circle><circle cx="${cx}" cy="${cy}" r="31" fill="url(#sunCore)"/><ellipse cx="${cx-9}" cy="${cy-11}" rx="11" ry="6.5" fill="rgba(255,252,240,.5)"/><text x="${cx}" y="${cy+9}" text-anchor="middle" font-family="'Aref Ruqaa',serif" font-size="24" fill="#221806" font-weight="700">حائل</text></g>`;
+    // شمس حائل — أكبر وأوضح
+    svg += `<g class="sun-group">
+        <circle cx="${cx}" cy="${cy}" r="88" fill="url(#sunGlow)"><animate attributeName="r" values="82;98;82" dur="5s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="54" fill="none" stroke="rgba(212,175,55,.4)" stroke-width="1.5" stroke-dasharray="4 8"><animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="360 ${cx} ${cy}" dur="25s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="64" fill="none" stroke="rgba(212,175,55,.18)" stroke-width="1" stroke-dasharray="1 12"><animateTransform attributeName="transform" type="rotate" from="360 ${cx} ${cy}" to="0 ${cx} ${cy}" dur="42s" repeatCount="indefinite"/></circle>
+        <circle cx="${cx}" cy="${cy}" r="41" fill="url(#sunCore)"/>
+        <ellipse cx="${cx-11}" cy="${cy-13}" rx="12" ry="7" fill="rgba(255,252,240,.5)"/>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="'Aref Ruqaa',serif" font-size="34" fill="#110a1f" font-weight="700">حائل</text>
+    </g>`;
 
+    // الكواكب — أكبر حجماً، بحركة JS (تضمن الضغط على كل الأجهزة)
+    planetAnims = [];
     DB.sectors.forEach((s,i)=>{
-        const off = orbitOffsets[i%orbitOffsets.length], ocx = cx+off.ox, ocy = cy+off.oy, r = off.r, dur = 55+i*12, beginOff = -(dur*(i/Math.max(DB.sectors.length,1))).toFixed(1), pr = sizes[i%sizes.length], hasRing = (i%3===1), hasMoon = (i%2===0), count = visibleProjects(s.id).length, pathD = `M ${ocx+r},${ocy} A ${r},${r} 0 1,1 ${ocx-r},${ocy} A ${r},${r} 0 1,1 ${ocx+r},${ocy}`;
-        let inner = `<circle r="${(pr*3.5).toFixed(1)}" fill="transparent" style="cursor:pointer; pointer-events:all;" />`;
-        inner += `<circle r="${(pr*2.1).toFixed(1)}" fill="url(#ag${i})" style="pointer-events:none;"/>`;
-        if (hasRing) inner += `<g transform="rotate(-22)" style="pointer-events:none;"><ellipse rx="${(pr*1.9).toFixed(1)}" ry="${(pr*0.62).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.32)}" stroke-width="3.4"/><ellipse rx="${(pr*2.35).toFixed(1)}" ry="${(pr*0.8).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.14)}" stroke-width="1.6"/></g>`;
-        inner += `<circle r="${pr}" fill="url(#pg${i})" style="pointer-events:none;"/><ellipse cx="${(-pr*0.32).toFixed(1)}" cy="${(-pr*0.38).toFixed(1)}" rx="${(pr*0.34).toFixed(1)}" ry="${(pr*0.2).toFixed(1)}" fill="rgba(255,255,255,.35)" style="pointer-events:none;"/>`;
-        if (hasRing) inner += `<path d="M ${-(pr*1.9).toFixed(1)} 0 A ${(pr*1.9).toFixed(1)} ${(pr*0.62).toFixed(1)} 0 0 0 ${(pr*1.9).toFixed(1)} 0" transform="rotate(-22)" fill="none" stroke="${hexToRgba(s.color,.45)}" stroke-width="3.4" style="pointer-events:none;"/>`;
-        if (hasMoon) inner += `<g style="pointer-events:none;"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${(7+i*1.6).toFixed(1)}s" repeatCount="indefinite"/><circle cx="${(pr*1.7+6).toFixed(1)}" cy="0" r="2.6" fill="${shade(s.color,.5)}"/></g>`;
-        inner += `<text class="planet-label" y="${(pr+20).toFixed(0)}" text-anchor="middle" fill="${shade(s.color,.55)}">${s.name}</text><text class="planet-count" y="${(pr+35).toFixed(0)}" text-anchor="middle">${count} ${count===1?'مشروع':'مشاريع'}</text>`;
-        svg += `<g class="planet-node" role="button" tabindex="0" onclick="openSector('${s.id}')" onkeydown="if(event.key==='Enter')openSector('${s.id}')"><animateMotion dur="${dur}s" repeatCount="indefinite" path="${pathD}" begin="${beginOff}s"/><g class="p-body">${inner}</g></g>`;
+        const r = orbitRadii[i];
+        const dur = 40 + i*15;
+        const phase = (i / Math.max(DB.sectors.length,1)) * Math.PI * 2;
+        const pr = 21 + (i%3)*2.5; // كواكب أكبر (21–26)
+        const count = visibleProjects(s.id).length;
+
+        let inner = `<circle r="${(pr*2.5).toFixed(1)}" fill="transparent"/>`; /* منطقة لمس واسعة */
+        inner += `<circle r="${(pr*2.2).toFixed(1)}" fill="url(#ag${i})"/>`;
+        if (i%2 === 1){
+            inner += `<ellipse rx="${(pr*2.2).toFixed(1)}" ry="${(pr*0.7).toFixed(1)}" fill="none" stroke="${hexToRgba(s.color,.5)}" stroke-width="2.5" transform="rotate(-20)"/>`;
+        }
+        inner += `<circle r="${pr}" fill="url(#pg${i})"/>`;
+        inner += `<ellipse cx="${(-pr*0.3).toFixed(1)}" cy="${(-pr*0.3).toFixed(1)}" rx="${(pr*0.4).toFixed(1)}" ry="${(pr*0.2).toFixed(1)}" fill="rgba(255,255,255,.4)"/>`;
+        if (i%2 === 0){
+            inner += `<g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${(7+i*1.5).toFixed(1)}s" repeatCount="indefinite"/><circle cx="${(pr*1.8+5).toFixed(1)}" cy="0" r="3" fill="${hexToRgba(s.color,.9)}"/></g>`;
+        }
+        inner += `<text class="planet-label" y="${(pr+24).toFixed(0)}" text-anchor="middle">${s.name}</text>`;
+        inner += `<text class="planet-count" y="${(pr+41).toFixed(0)}" text-anchor="middle">${count} ${count===1?'مشروع':'مشاريع'}</text>`;
+
+        const startX = cx + Math.cos(phase)*r, startY = cy + Math.sin(phase)*r;
+        svg += `<g class="planet-node" data-sid="${s.id}" role="button" tabindex="0" transform="translate(${startX.toFixed(1)},${startY.toFixed(1)})" onkeydown="if(event.key==='Enter')openSectorSafe('${s.id}')">
+            <g class="p-body">${inner}</g>
+        </g>`;
+        planetAnims.push({ sid: s.id, cx, cy, r, dur, phase });
     });
 
-    svg += `<g opacity="0" style="pointer-events:none;"><animateMotion dur="9s" begin="4s" repeatCount="indefinite" rotate="auto" path="M -80,150 L 920,440"/><animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.06;0.42;0.55" dur="9s" begin="4s" repeatCount="indefinite"/><line x1="-64" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="2"/><circle r="2.4" fill="#f2f7ff"/></g>
-            <g opacity="0" style="pointer-events:none;"><animateMotion dur="13s" begin="10s" repeatCount="indefinite" rotate="auto" path="M 900,130 L -100,580"/><animate attributeName="opacity" values="0;0.75;0.75;0" keyTimes="0;0.05;0.4;0.52" dur="13s" begin="10s" repeatCount="indefinite"/><line x1="-52" y1="0" x2="0" y2="0" stroke="url(#cometTail)" stroke-width="1.6"/><circle r="2" fill="#eef3ff"/></g></svg>`;
+    svg += `</svg>`;
 
-    document.getElementById('orbitWrap').innerHTML = `<div class="nebula neb-a"></div><div class="nebula neb-b"></div><div class="nebula neb-c"></div><div id="galaxyTilt">${svg}</div>`;
-    initGalaxyParallax();
+    document.getElementById('orbitWrap').innerHTML = `
+        <div class="nebula neb-a"></div>
+        <div class="nebula neb-b"></div>
+        <div id="galaxyTilt">${svg}</div>`;
 
+    bindPlanetTaps();
+    startPlanetMotion();
+
+    // الأزرار المائية الزجاجية للقطاعات
     document.getElementById('galaxyLegend').innerHTML = DB.sectors.map(s=>`
-        <button class="legend-pill" style="--pill-color:${s.color}" onclick="openSector('${s.id}')">
-            <span class="legend-dot" style="background:${s.color}; color:${s.color}"></span>${s.name}
+        <button class="legend-pill" style="--pill-color:${s.color}; --pill-color-alpha:${hexToRgba(s.color,0.4)}" onclick="openSectorSafe('${s.id}')">
+            <span class="legend-icon">${SECTOR_ICONS[s.id] || SECTOR_ICONS['tech']}</span>
+            ${s.name}
         </button>`).join('');
 }
 
-function initGalaxyParallax(){
-    const wrap = document.getElementById('orbitWrap');
-    if (reduceMotion || wrap.dataset.parallaxBound) return;
-    wrap.dataset.parallaxBound = '1';
-    const onMove = (clientX, clientY)=>{
-        const tilt = document.getElementById('galaxyTilt'); if (!tilt) return;
-        const rect = wrap.getBoundingClientRect();
-        const dx = (clientX - rect.left)/rect.width - 0.5; const dy = (clientY - rect.top)/rect.height - 0.5;
-        tilt.style.animation = 'none'; tilt.style.transform = `rotateX(${(16 - dy*10).toFixed(1)}deg) rotateY(${(dx*8).toFixed(1)}deg)`;
-    };
-    wrap.addEventListener('pointermove', e => onMove(e.clientX, e.clientY));
-    wrap.addEventListener('pointerleave', ()=>{ const tilt = document.getElementById('galaxyTilt'); if (!tilt) return; tilt.style.transform = ''; tilt.style.animation = ''; });
-}
-
-function initHashtags(){
-    const layer = document.getElementById('hashtagLayer');
-    layer.style.display = 'block'; layer.innerHTML = '';
-    DB.hashtags.forEach((tag, i) => {
-        const el = document.createElement('span'); el.className = 'floating-tag'; el.textContent = '#' + tag.replace(/ /g,'_');
-        el.style.fontSize = (0.9 + Math.random()*1.1).toFixed(2) + 'rem'; el.style.left = (Math.random()*80 + 5) + '%'; el.style.top = (Math.random()*85 + 5) + '%';
-        layer.appendChild(el);
-        if (!reduceMotion){
-            gsap.to(el, { x: `random(-120, 120)`, y: `random(-90, 90)`, duration: 22 + Math.random()*16, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: i*0.6 });
-            gsap.to(el, { opacity: 'random(0.4, 1)', duration: 6+Math.random()*5, repeat:-1, yoyo:true, ease:'sine.inOut' });
-        }
+/* ربط ضغط الكواكب بطريقة مضمونة للمس والماوس معاً */
+function bindPlanetTaps(){
+    const svgEl = document.getElementById('galaxySvg');
+    if (!svgEl) return;
+    let downX = 0, downY = 0;
+    svgEl.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; });
+    svgEl.addEventListener('pointerup', e => {
+        if (Math.hypot(e.clientX - downX, e.clientY - downY) > 14) return; // كان سحباً وليس ضغطة
+        const node = e.target.closest('.planet-node');
+        if (node) openSectorSafe(node.dataset.sid);
     });
 }
 
+/* حركة الكواكب المدارية بـ requestAnimationFrame */
+function startPlanetMotion(){
+    if (planetRafId) cancelAnimationFrame(planetRafId);
+    const nodes = {};
+    document.querySelectorAll('.planet-node').forEach(n => nodes[n.dataset.sid] = n);
+    const t0 = performance.now();
+    function tick(now){
+        const t = (now - t0) / 1000;
+        for (const p of planetAnims){
+            const node = nodes[p.sid]; if (!node) continue;
+            const ang = p.phase + (t / p.dur) * Math.PI * 2;
+            const x = p.cx + Math.cos(ang) * p.r;
+            const y = p.cy + Math.sin(ang) * p.r;
+            node.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+        }
+        planetRafId = requestAnimationFrame(tick);
+    }
+    planetRafId = requestAnimationFrame(tick);
+}
+
+/* منع فتح القطاع مرتين من ضغطة واحدة */
+let lastSectorOpen = 0;
+function openSectorSafe(sectorId){
+    const now = Date.now();
+    if (now - lastSectorOpen < 600) return;
+    lastSectorOpen = now;
+    triggerSectorZoom(sectorId);
+}
+
 function initGalaxy(){
-    const gView = document.getElementById('galaxy-view'); gView.style.display = 'flex';
-    buildGalaxySvg(); initHashtags();
+    const gView = document.getElementById('galaxy-view');
+    gView.style.display = 'flex';
+    buildGalaxySvg();
     gsap.to(gView, { opacity:1, duration:1.5, ease:'power2.out' });
-    gsap.from('#orbitWrap', { scale:0.5, opacity:0, duration:2, ease:'power3.out' });
+    gsap.from('#orbitWrap', { scale:0.4, opacity:0, duration:2.5, ease:'power3.out' });
+    gsap.from('.legend-pill', { y:20, opacity:0, duration:0.8, stagger:0.08, delay:1.2, ease:'back.out(1.5)', clearProps:'all' });
 }
 
 /* ==========================================================
-   6. تفاصيل القطاع والانتقال بالقفز الزمني (Warp)
+   4. التفاعل: الدخول للقطاع والمشاريع
    ========================================================== */
 let currentSectorId = null;
 
-function openSector(sectorId){
+function triggerSectorZoom(sectorId) {
     const sector = DB.sectors.find(s=>s.id===sectorId);
     if (!sector) return;
     currentSectorId = sectorId;
@@ -936,129 +898,381 @@ function openSector(sectorId){
 
     const wrap = document.getElementById('sd-projects');
     const list = visibleProjects(sectorId);
-    wrap.innerHTML = list.length ? '' : `<div class="text-center text-gray-500 col-span-full py-10">لا توجد مشاريع معروضة في هذا القطاع حالياً</div>`;
+    wrap.innerHTML = list.length ? '' : `<div class="text-center text-gray-400 font-bold text-lg col-span-full py-12">لا توجد مشاريع معروضة في هذا القطاع حالياً</div>`;
 
     list.forEach(proj => {
         const hasLink = proj.link && proj.link.trim() !== '' && proj.link !== '#';
         const card = document.createElement('div');
         card.className = 'project-card';
         card.style.setProperty('--card-color', sector.color);
-        card.style.setProperty('--card-color-alpha', hexToRgba(sector.color, 0.15));
+        card.style.setProperty('--card-color-alpha', hexToRgba(sector.color, 0.2));
         card.innerHTML = `
-            <span class="project-badge">${proj.tag || 'مشروع'}</span>
-            ${proj.visibility==='internal' ? `<span class="internal-badge">🔒 داخلي</span>` : ''}
+            <span class="project-badge mb-3">${proj.tag || 'مشروع'}</span>
+            ${proj.visibility==='internal' ? `<span class="internal-badge mb-3">🔒 داخلي</span>` : ''}
             <h3>${proj.name}</h3>
             <p>${proj.desc || ''}</p>
             ${hasLink
-                ? `<a href="${proj.link}" target="_blank" rel="noopener" class="open-project-btn" style="--pc:${sector.color}; --pca:${hexToRgba(sector.color,0.15)}" onclick="event.stopPropagation()">فتح المشروع<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></a>`
-                : `<div class="text-sm text-gray-500 font-bold mt-1">الملف التفاعلي قيد الإعداد — أضف الرابط من الأدمن</div>`}
+                ? `<a href="${proj.link}" target="_blank" rel="noopener" class="open-project-btn" style="--pc:${sector.color}; --pca:${hexToRgba(sector.color,0.2)}" onclick="event.stopPropagation()">
+                     فتح الملف التفاعلي
+                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                   </a>`
+                : `<div class="text-sm text-gray-400 font-bold mt-2">الملف التفاعلي غير متاح حالياً</div>`}
         `;
         if (hasLink) card.onclick = () => window.open(proj.link, '_blank', 'noopener');
         wrap.appendChild(card);
     });
 
     const detailsView = document.getElementById('sector-details');
-    const warpOverlay = document.getElementById('warp-overlay');
-    
-    warpOverlay.style.background = `radial-gradient(circle at center, ${sector.color} 0%, transparent 80%)`;
-    detailsView.style.background = `radial-gradient(circle at top, ${hexToRgba(sector.color, 0.18)} 0%, rgba(5,5,10,0.96) 60%)`;
     detailsView.style.display = 'flex';
 
-    const tl = gsap.timeline();
-    tl.to('#orbitWrap', { scale: 8, opacity: 0, duration: 0.8, ease: 'power3.in' }, 0);
-    tl.to(warpOverlay, { opacity: 0.8, scale: 2, duration: 0.6, ease: 'power2.in' }, 0.2);
-    tl.to(detailsView, { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.6);
-    tl.to(warpOverlay, { opacity: 0, duration: 0.5 }, 0.8);
-    tl.from('.project-card', { y: 60, scale: 0.9, opacity: 0, duration: 0.6, stagger: 0.08, ease: 'back.out(1.2)' }, 0.8);
+    gsap.to('#orbitWrap', { scale: 3.5, opacity: 0, duration: 0.7, ease: 'power3.in' });
+    gsap.to('.galaxy-legend', { y: 40, opacity: 0, duration: 0.5 });
+
+    gsap.to(detailsView, { opacity: 1, duration: 0.6, delay: 0.5, ease: 'power2.out' });
+    gsap.from('.project-card', { y: 50, opacity: 0, duration: 0.7, stagger: 0.1, delay: 0.6, ease: 'back.out(1.2)' });
 }
 
 function closeSectorDetails(){
     const detailsView = document.getElementById('sector-details');
-    const tl = gsap.timeline();
-    tl.to(detailsView, { opacity: 0, duration: 0.4, ease: 'power2.in', onComplete: () => { detailsView.style.display='none'; } }, 0);
-    tl.to('#orbitWrap', { scale: 1, opacity: 1, duration: 1, ease: 'power4.out' }, 0.2);
+    gsap.to(detailsView, {
+        opacity: 0, duration: 0.4, ease: 'power2.in',
+        onComplete: () => { detailsView.style.display = 'none'; }
+    });
+    gsap.to('#orbitWrap', { scale: 1, opacity: 1, duration: 0.8, delay: 0.2, ease: 'power3.out' });
+    gsap.to('.galaxy-legend', { y: 0, opacity: 1, duration: 0.5, delay: 0.3 });
 }
 
 /* ==========================================================
-   7. المصادقة ولوحة التحكم 
+   5. المصادقة ولوحة التحكم
    ========================================================== */
-function openLogin(){ if(isAdmin){openAdmin();return;} document.getElementById('loginError').style.display='none'; document.getElementById('loginPass').value=''; document.getElementById('loginModal').style.display='flex'; setTimeout(()=>document.getElementById('loginPass').focus(), 100); }
+function openLogin(){
+    if (isAdmin){ openAdmin(); return; }
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginModal').style.display = 'flex';
+    setTimeout(()=>document.getElementById('loginPass').focus(), 100);
+}
 function closeModal(id){ document.getElementById(id).style.display = 'none'; }
-async function doLogin(){ const pass = document.getElementById('loginPass').value; const hash = await sha256(pass); if(hash===DB.passHash){ isAdmin=true; sessionStorage.setItem(SESSION_KEY,'1'); closeModal('loginModal'); document.getElementById('internalPill').style.display='flex'; refreshPublicViews(); openAdmin(); showToast('أهلاً بك — الوضع الداخلي مفعّل'); } else { document.getElementById('loginError').style.display='block'; } }
-function adminLogout(){ isAdmin=false; sessionStorage.removeItem(SESSION_KEY); document.getElementById('internalPill').style.display='none'; closeAdmin(); refreshPublicViews(); showToast('تم تسجيل الخروج'); }
-function refreshPublicViews(){ if(document.getElementById('galaxy-view').style.display==='flex') buildGalaxySvg(); if(document.getElementById('sector-details').style.display==='flex'&&currentSectorId) openSector(currentSectorId); }
-function openAdmin(){ document.getElementById('admin-panel').style.display='flex'; switchTab('overview'); }
-function closeAdmin(){ document.getElementById('admin-panel').style.display='none'; refreshPublicViews(); }
 
-let activeTab = 'overview';
-function switchTab(tab){ activeTab = tab; document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab)); renderAdminBody(); }
-
-function renderAdminBody(){ const body = document.getElementById('adminBody'); if(activeTab==='overview') renderOverview(body); if(activeTab==='projects') renderProjects(body); if(activeTab==='meetings') renderMeetings(body); if(activeTab==='settings') renderSettings(body); }
-
-function renderOverview(body){
-    const total=DB.projects.length, pub=DB.projects.filter(p=>p.visibility==='public').length, linked=DB.projects.filter(p=>p.link&&p.link.trim()!=='').length, updates=DB.projects.reduce((n,p)=>n+(p.updates?.length||0),0);
-    const latest=DB.projects.flatMap(p=>(p.updates||[]).map(u=>({...u,project:p.name}))).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
-    body.innerHTML = `<div class="stat-grid mb-6"><div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">إجمالي المشاريع</div></div><div class="stat-box"><div class="stat-num">${pub}</div><div class="stat-label">فرص للعامة</div></div><div class="stat-box"><div class="stat-num">${total-pub}</div><div class="stat-label">مشاريع داخلية</div></div><div class="stat-box"><div class="stat-num">${linked}</div><div class="stat-label">مربوطة بملفات</div></div><div class="stat-box"><div class="stat-num">${updates}</div><div class="stat-label">تحديثات موثقة</div></div></div><div class="admin-card"><h4 class="font-black text-white mb-2">آخر التحديثات</h4>${latest.length?latest.map(u=>`<div class="update-item"><div class="update-date">${u.date} · ${u.project}</div><div class="update-text">${u.text}</div></div>`).join(''):'<p class="text-sm text-gray-500">لا توجد تحديثات.</p>'}</div>`;
+async function doLogin(){
+    const pass = document.getElementById('loginPass').value;
+    const hash = await sha256(pass);
+    if (hash === DB.passHash){
+        isAdmin = true;
+        sessionStorage.setItem(SESSION_KEY, '1');
+        closeModal('loginModal');
+        document.getElementById('internalPill').style.display = 'flex';
+        refreshPublicViews();
+        openAdmin();
+        showToast('أهلاً بك — تم تفعيل الوضع الداخلي');
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+}
+function adminLogout(){
+    isAdmin = false;
+    sessionStorage.removeItem(SESSION_KEY);
+    document.getElementById('internalPill').style.display = 'none';
+    closeAdmin();
+    refreshPublicViews();
+    showToast('تم تسجيل الخروج');
+}
+function refreshPublicViews(){
+    if (document.getElementById('galaxy-view').style.display === 'flex') buildGalaxySvg();
+    if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId) triggerSectorZoom(currentSectorId);
 }
 
-function renderProjects(body){
-    let html = `<div class="admin-row mb-4"><p class="text-sm text-gray-400">إدارة المشاريع.</p><button class="btn-primary" onclick="openProjectModal()">+ مشروع جديد</button></div>`;
+function openAdmin(){
+    document.getElementById('admin-panel').style.display = 'flex';
+    switchTab('overview');
+}
+function closeAdmin(){ document.getElementById('admin-panel').style.display = 'none'; refreshPublicViews(); }
+
+let activeTab = 'overview';
+function switchTab(tab){
+    activeTab = tab;
+    document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    renderAdminBody();
+}
+
+function renderAdminBody(){
+    const body = document.getElementById('adminBody');
+    if (activeTab === 'overview') return renderOverview(body);
+    if (activeTab === 'sectors') return renderAdminSectors(body);
+    if (activeTab === 'projects') return renderProjects(body);
+    if (activeTab === 'meetings') return renderMeetings(body);
+    if (activeTab === 'settings') return renderSettings(body);
+}
+
+/* ---- نظرة عامة ---- */
+function renderOverview(body){
+    const total = DB.projects.length;
+    const pub = DB.projects.filter(p=>p.visibility==='public').length;
+    const linked = DB.projects.filter(p=>p.link && p.link.trim()!=='').length;
+
+    body.innerHTML = `
+        <div class="stat-grid">
+            <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">إجمالي المشاريع</div></div>
+            <div class="stat-box"><div class="stat-num">${pub}</div><div class="stat-label">مشاريع معروضة للعامة</div></div>
+            <div class="stat-box"><div class="stat-num">${total-pub}</div><div class="stat-label">مشاريع داخلية</div></div>
+            <div class="stat-box"><div class="stat-num">${linked}</div><div class="stat-label">ملفات تفاعلية مربوطة</div></div>
+        </div>
+        <div class="admin-card">
+            <h4 class="text-xl font-black text-white mb-2">القيمة المضافة للشراكة</h4>
+            <p class="text-base text-gray-300 leading-relaxed font-medium">هذه اللوحة هي المنصة الإلكترونية المشتركة المنصوص عليها في مذكرة التفاهم. يمكنك من خلالها إدارة القطاعات (الكواكب)، وإضافة المشاريع وربطها بروابط GitHub الخاصة بها، والتحكم بما يُعرض للعامة تسويقياً عبر قنوات تقاطع وما يبقى داخلياً للاجتماعات.</p>
+        </div>`;
+}
+
+/* ---- إدارة القطاعات (الكواكب) ---- */
+function renderAdminSectors(body){
+    let html = `<div class="admin-row mb-6">
+        <p class="text-base text-gray-400 font-bold">أضف كوكباً (قطاعاً) جديداً للمجرة وحدد لونه الخاص ليتناسب مع الهوية.</p>
+        <button class="btn-primary" onclick="openSectorModal()">+ قطاع جديد</button>
+    </div>`;
+
     DB.sectors.forEach(s => {
-        const projs = DB.projects.filter(p=>p.sectorId===s.id);
-        html += `<div class="admin-card"><div class="admin-row mb-2"><h4 class="font-black" style="color:${s.color}">● ${s.name}</h4><span class="text-xs text-gray-500">${projs.length}</span></div>${projs.map(p=>`<div class="admin-row" style="border-top:1px solid rgba(255,255,255,0.06); padding:0.7rem 0;"><div style="min-width:0"><div class="font-bold text-white">${p.name} <span class="vis-chip ${p.visibility==='public'?'vis-public':'vis-internal'}">${p.visibility==='public'?'عام':'داخلي'}</span></div><div class="text-xs text-gray-500 mt-1">${p.tag||''}</div></div><div class="flex gap-2 flex-wrap"><button class="btn-mini" onclick="toggleVisibility('${p.id}')">${p.visibility==='public'?'إخفاء':'نشر'}</button><button class="btn-mini" onclick="openProjectModal('${p.id}')">تعديل</button><button class="btn-danger" onclick="deleteProject('${p.id}')">حذف</button></div></div>`).join('') || '<p class="text-gray-600 text-sm">لا مشاريع.</p>'}</div>`;
+        const projsCount = DB.projects.filter(p=>p.sectorId===s.id).length;
+        html += `<div class="admin-card">
+            <div class="admin-row">
+                <div class="flex items-center gap-4">
+                    <div style="width:30px; height:30px; border-radius:50%; background:${s.color}; box-shadow: 0 0 15px ${s.color}; flex-shrink:0;"></div>
+                    <div>
+                        <h4 class="text-xl font-black text-white">${s.name}</h4>
+                        <span class="text-sm text-gray-400 font-bold">${projsCount} مشاريع مرتبطة · ${s.desc.slice(0,40)}...</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button class="btn-ghost py-2" onclick="openSectorModal('${s.id}')">تعديل</button>
+                    <button class="btn-danger py-2" onclick="deleteSector('${s.id}')">حذف</button>
+                </div>
+            </div>
+        </div>`;
     });
     body.innerHTML = html;
 }
 
-function openProjectModal(id){ const m = document.getElementById('projectModal'), sel = document.getElementById('pm-sector'); sel.innerHTML = DB.sectors.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''); const p = id?DB.projects.find(x=>x.id===id):null; document.getElementById('projectModalTitle').textContent=p?'تعديل':'جديد'; document.getElementById('pm-id').value=p?.id||''; document.getElementById('pm-name').value=p?.name||''; document.getElementById('pm-desc').value=p?.desc||''; document.getElementById('pm-link').value=p?.link||''; document.getElementById('pm-tag').value=p?.tag||''; document.getElementById('pm-vis').value=p?.visibility||'internal'; sel.value=p?.sectorId||DB.sectors[0].id; m.style.display='flex'; }
-function saveProject(){ const id=document.getElementById('pm-id').value, name=document.getElementById('pm-name').value.trim(); if(!name){showToast('مطلوب الاسم');return;} const data={name, sectorId:document.getElementById('pm-sector').value, desc:document.getElementById('pm-desc').value.trim(), link:document.getElementById('pm-link').value.trim(), tag:document.getElementById('pm-tag').value.trim(), visibility:document.getElementById('pm-vis').value}; if(id){Object.assign(DB.projects.find(p=>p.id===id), data);}else{DB.projects.push({id:'p'+Date.now(), updates:[], ...data});} saveData(); closeModal('projectModal'); renderAdminBody(); showToast('تم الحفظ'); }
-function toggleVisibility(id){ const p=DB.projects.find(x=>x.id===id); p.visibility=p.visibility==='public'?'internal':'public'; saveData(); renderAdminBody(); }
-function deleteProject(id){ if(!confirm('حذف؟'))return; DB.projects=DB.projects.filter(x=>x.id!==id); saveData(); renderAdminBody(); }
+function openSectorModal(id){
+    const modal = document.getElementById('sectorModal');
+    const s = id ? DB.sectors.find(x=>x.id===id) : null;
+    document.getElementById('sectorModalTitle').textContent = s ? 'تعديل القطاع' : 'قطاع جديد';
+    document.getElementById('sm-id').value = s?.id || '';
+    document.getElementById('sm-name').value = s?.name || '';
+    document.getElementById('sm-color').value = s?.color || '#00acc1';
+    document.getElementById('sm-color-picker').value = s?.color || '#00acc1';
+    document.getElementById('sm-desc').value = s?.desc || '';
+    modal.style.display = 'flex';
+}
+function saveSector(){
+    const id = document.getElementById('sm-id').value;
+    const name = document.getElementById('sm-name').value.trim();
+    if (!name){ showToast('يجب كتابة اسم القطاع'); return; }
+    const data = {
+        name,
+        color: document.getElementById('sm-color').value,
+        desc: document.getElementById('sm-desc').value.trim()
+    };
+    if (id){
+        Object.assign(DB.sectors.find(s=>s.id===id), data);
+    } else {
+        DB.sectors.push({ id:'s'+Date.now(), ...data });
+    }
+    saveData(); closeModal('sectorModal'); renderAdminBody();
+    showToast('تم حفظ القطاع بنجاح');
+}
+function deleteSector(id){
+    const projsCount = DB.projects.filter(p=>p.sectorId===id).length;
+    if (projsCount > 0) {
+        showToast('لا يمكن حذف القطاع لوجود مشاريع مرتبطة به. احذف المشاريع أولاً.');
+        return;
+    }
+    if (!confirm(`هل أنت متأكد من حذف هذا القطاع؟`)) return;
+    DB.sectors = DB.sectors.filter(x=>x.id!==id);
+    saveData(); renderAdminBody(); showToast('تم حذف القطاع');
+}
 
-function renderMeetings(body){
-    let html = ''; DB.projects.forEach(p=>{ const s=DB.sectors.find(x=>x.id===p.sectorId); const ups=(p.updates||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)); html+=`<div class="admin-card"><div class="admin-row"><div><span class="font-black text-white">${p.name}</span> <span class="text-xs" style="color:${s?.color}">${s?.name||''}</span></div><button class="btn-mini" onclick="openUpdateModal('${p.id}')">+ تحديث</button></div>${ups.map((u,i)=>`<div class="update-item"><div class="admin-row"><span class="update-date">${u.date}</span><button class="btn-danger" style="padding:2px 10px;font-size:0.7rem" onclick="deleteUpdate('${p.id}',${p.updates.indexOf(u)})">حذف</button></div><div class="update-text">${u.text}</div></div>`).join('')}</div>`; });
+/* ---- إدارة المشاريع ---- */
+function renderProjects(body){
+    let html = `<div class="admin-row mb-6">
+        <p class="text-base text-gray-400 font-bold">أضف مشروعاً للقطاعات واربطه بملفه التفاعلي.</p>
+        <button class="btn-primary" onclick="openProjectModal()">+ مشروع جديد</button>
+    </div>`;
+
+    DB.sectors.forEach(s => {
+        const projs = DB.projects.filter(p=>p.sectorId===s.id);
+        html += `<div class="admin-card">
+            <div class="mb-4 border-b border-gray-700 pb-2">
+                <h4 class="text-xl font-black" style="color:${s.color}">${s.name}</h4>
+            </div>
+            ${projs.map(p=>`
+                <div class="admin-row py-3 border-b border-gray-800 last:border-0">
+                    <div style="min-width:0; flex:1">
+                        <div class="font-black text-lg text-white mb-1">${p.name}
+                            <span class="vis-chip mr-2 ${p.visibility==='public'?'vis-public':'vis-internal'}">${p.visibility==='public'?'ظاهر للعامة':'داخلي فقط'}</span>
+                        </div>
+                        <div class="text-sm text-gray-400 font-bold">${p.tag||'بدون وسم'}${p.link?` · مربوط بملف تفاعلي`:' · <span class="text-red-400">غير مربوط</span>'}</div>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button class="btn-mini" onclick="toggleVisibility('${p.id}')">${p.visibility==='public'?'جعله داخلي':'نشر للعامة'}</button>
+                        <button class="btn-mini" onclick="openProjectModal('${p.id}')">تعديل</button>
+                        <button class="btn-danger" onclick="deleteProject('${p.id}')">حذف</button>
+                    </div>
+                </div>`).join('') || '<p class="text-gray-500 font-bold">لا يوجد مشاريع مضافة هنا.</p>'}
+        </div>`;
+    });
     body.innerHTML = html;
 }
-function openUpdateModal(pid){ const p=DB.projects.find(x=>x.id===pid); document.getElementById('um-project').value=pid; document.getElementById('updateModalProject').textContent=p.name; document.getElementById('um-date').value=new Date().toISOString().slice(0,10); document.getElementById('um-text').value=''; document.getElementById('updateModal').style.display='flex'; }
-function saveUpdate(){ const p=DB.projects.find(x=>x.id===document.getElementById('um-project').value), text=document.getElementById('um-text').value.trim(); if(!text)return; p.updates=p.updates||[]; p.updates.push({date:document.getElementById('um-date').value, text}); saveData(); closeModal('updateModal'); renderAdminBody(); }
-function deleteUpdate(pid, idx){ DB.projects.find(x=>x.id===pid).updates.splice(idx,1); saveData(); renderAdminBody(); }
 
-/* --- إضافة إعداد الصوت في لوحة التحكم --- */
-function renderSettings(body){ 
+function openProjectModal(id){
+    const modal = document.getElementById('projectModal');
+    const sel = document.getElementById('pm-sector');
+    sel.innerHTML = DB.sectors.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    const p = id ? DB.projects.find(x=>x.id===id) : null;
+    document.getElementById('projectModalTitle').textContent = p ? 'تعديل المشروع' : 'مشروع جديد';
+    document.getElementById('pm-id').value = p?.id || '';
+    document.getElementById('pm-name').value = p?.name || '';
+    document.getElementById('pm-desc').value = p?.desc || '';
+    document.getElementById('pm-link').value = p?.link || '';
+    document.getElementById('pm-tag').value = p?.tag || '';
+    document.getElementById('pm-vis').value = p?.visibility || 'internal';
+    if(p) sel.value = p.sectorId;
+    modal.style.display = 'flex';
+}
+function saveProject(){
+    const id = document.getElementById('pm-id').value;
+    const name = document.getElementById('pm-name').value.trim();
+    if (!name){ showToast('اكتب اسم المشروع'); return; }
+    const data = {
+        name,
+        sectorId: document.getElementById('pm-sector').value,
+        desc: document.getElementById('pm-desc').value.trim(),
+        link: document.getElementById('pm-link').value.trim(),
+        tag: document.getElementById('pm-tag').value.trim(),
+        visibility: document.getElementById('pm-vis').value
+    };
+    if (id){
+        Object.assign(DB.projects.find(p=>p.id===id), data);
+    } else {
+        DB.projects.push({ id:'p'+Date.now(), updates:[], ...data });
+    }
+    saveData(); closeModal('projectModal'); renderAdminBody();
+    showToast('تم حفظ المشروع بنجاح');
+}
+function toggleVisibility(id){
+    const p = DB.projects.find(x=>x.id===id);
+    p.visibility = p.visibility==='public' ? 'internal' : 'public';
+    saveData(); renderAdminBody();
+    showToast(p.visibility==='public' ? 'أصبح المشروع ظاهراً للعامة' : 'أصبح المشروع داخلياً');
+}
+function deleteProject(id){
+    const p = DB.projects.find(x=>x.id===id);
+    if (!confirm(`حذف «${p.name}» نهائياً؟`)) return;
+    DB.projects = DB.projects.filter(x=>x.id!==id);
+    saveData(); renderAdminBody(); showToast('تم الحذف');
+}
+
+/* ---- الاجتماع الأسبوعي والتحديثات ---- */
+function renderMeetings(body){
+    let html = `<p class="text-base text-gray-400 font-bold mb-6">وثّق التحديثات لكل مشروع لمناقشتها في الاجتماعات الأسبوعية المشتركة.</p>`;
+    DB.projects.forEach(p => {
+        const s = DB.sectors.find(x=>x.id===p.sectorId);
+        const ups = (p.updates||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+        html += `<div class="admin-card">
+            <div class="admin-row mb-4">
+                <div>
+                    <span class="text-xl font-black text-white ml-2">${p.name}</span>
+                    <span class="text-sm font-bold" style="color:${s?.color}">${s?.name||''}</span>
+                </div>
+                <button class="btn-ghost py-1" onclick="openUpdateModal('${p.id}')">+ إضافة تحديث</button>
+            </div>
+            ${ups.length ? ups.map(u=>`
+                <div class="update-item">
+                    <div class="admin-row mb-2">
+                        <span class="update-date text-sm">${u.date}</span>
+                        <button class="btn-danger py-1 px-3" onclick="deleteUpdate('${p.id}',${p.updates.indexOf(u)})">حذف</button>
+                    </div>
+                    <div class="update-text text-base">${u.text}</div>
+                </div>`).join('') : '<p class="text-gray-600 font-bold mt-2">لا توجد تحديثات مسجلة.</p>'}
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+function openUpdateModal(projectId){
+    const p = DB.projects.find(x=>x.id===projectId);
+    document.getElementById('um-project').value = projectId;
+    document.getElementById('updateModalProject').textContent = p.name;
+    document.getElementById('um-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('um-text').value = '';
+    document.getElementById('updateModal').style.display = 'flex';
+}
+function saveUpdate(){
+    const p = DB.projects.find(x=>x.id===document.getElementById('um-project').value);
+    const text = document.getElementById('um-text').value.trim();
+    if (!text){ showToast('اكتب نص التحديث أولاً'); return; }
+    p.updates = p.updates || [];
+    p.updates.push({ date: document.getElementById('um-date').value, text });
+    saveData(); closeModal('updateModal'); renderAdminBody();
+    showToast('تم توثيق التحديث بنجاح');
+}
+function deleteUpdate(projectId, idx){
+    const p = DB.projects.find(x=>x.id===projectId);
+    p.updates.splice(idx,1);
+    saveData(); renderAdminBody();
+}
+
+/* ---- الإعدادات ---- */
+function renderSettings(body){
     body.innerHTML = `
         <div class="admin-card">
-            <h4 class="font-black text-white mb-2">إعدادات الصوت والمؤثرات</h4>
-            <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer mb-3">
-                <input type="checkbox" id="set-sound" ${DB.soundEnabled ? 'checked' : ''} style="width:16px;height:16px; accent-color: var(--shamael-teal);">
-                تشغيل المقطع الصوتي الترحيبي عند الضغط على "استكشف عوالم حائل"
-            </label>
-            <button class="btn-primary" onclick="saveSoundSetting()">حفظ إعداد الصوت</button>
+            <h4 class="text-xl font-black text-white mb-4">تغيير كلمة المرور للإدارة</h4>
+            <label class="field-label">كلمة المرور الجديدة</label>
+            <input type="password" id="set-newpass" class="field-input mb-4" style="max-width:340px" placeholder="٨ أحرف على الأقل">
+            <div><button class="btn-primary" onclick="changePassword()">تحديث كلمة المرور</button></div>
         </div>
         <div class="admin-card">
-            <h4 class="font-black text-white mb-2">النسخ الاحتياطي</h4>
-            <div class="flex gap-2 flex-wrap">
-                <button class="btn-primary" onclick="exportData()">تصدير JSON</button>
-                <button class="btn-ghost" onclick="document.getElementById('importFile').click()">استيراد</button>
-                <button class="btn-danger" onclick="resetData()">إعادة للوضع الافتراضي</button>
+            <h4 class="text-xl font-black text-white mb-3">النسخ الاحتياطي وإعادة التعيين</h4>
+            <p class="text-base text-gray-400 font-bold mb-6">البيانات محفوظة محلياً. يمكنك تصديرها كملف (JSON) لمشاركتها مع الفريق أو استيرادها لاحقاً.</p>
+            <div class="flex gap-4 flex-wrap">
+                <button class="btn-primary" onclick="exportData()">تصدير البيانات (JSON)</button>
+                <button class="btn-ghost" onclick="document.getElementById('importFile').click()">استيراد ملف</button>
+                <button class="btn-danger" onclick="resetData()">إعادة تعيين للمصنع</button>
                 <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
             </div>
-        </div>`; 
+        </div>`;
 }
-
-function saveSoundSetting() {
-    DB.soundEnabled = document.getElementById('set-sound').checked;
+async function changePassword(){
+    const np = document.getElementById('set-newpass').value;
+    if (np.length < 8){ showToast('كلمة المرور قصيرة — ٨ أحرف على الأقل'); return; }
+    DB.passHash = await sha256(np);
     saveData();
-    showToast('تم حفظ إعدادات الصوت بنجاح');
+    document.getElementById('set-newpass').value = '';
+    showToast('تم تحديث كلمة المرور بنجاح');
 }
-
-function exportData(){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'})); a.download='hail-global-data.json'; a.click(); URL.revokeObjectURL(a.href); }
-function importData(ev){ const r=new FileReader(); r.onload=e=>{try{DB=JSON.parse(e.target.result); if(typeof DB.soundEnabled === 'undefined') DB.soundEnabled = true; saveData();renderAdminBody();showToast('تم الاستيراد');}catch{showToast('ملف غير صالح');}}; if(ev.target.files[0]) r.readAsText(ev.target.files[0]); ev.target.value=''; }
-function resetData(){ if(confirm('متأكد؟ سيتم حذف جميع تعديلاتك.')){DB=JSON.parse(JSON.stringify(DEFAULT_DATA));saveData();renderAdminBody();} }
-
-if (isAdmin) document.getElementById('internalPill').style.display = 'flex';
+function exportData(){
+    const blob = new Blob([JSON.stringify(DB, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'hail-intersect-data.json';
+    a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(ev){
+    const file = ev.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const d = JSON.parse(e.target.result);
+            if (!d.sectors || !d.projects) throw new Error('bad');
+            DB = d; saveData(); renderAdminBody();
+            showToast('تم استيراد البيانات بنجاح');
+        } catch { showToast('ملف البيانات غير صالح'); }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+}
+function resetData(){
+    if (!confirm('سيتم حذف كل التعديلات الحالية وإعادة تعيين البيانات للافتراضي. هل أنت متأكد؟')) return;
+    DB = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    saveData(); renderAdminBody(); showToast('تمت استعادة بيانات المصنع');
+}
 </script>
 </body>
 </html>
-
-
-```
