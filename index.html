@@ -699,9 +699,8 @@ function applyAudioSettings(){
 function playThemeAudio(){
     const el = document.getElementById('bgAudio');
     if (!el || DB.audio.muted) return;
-    el.volume = 0;
+    el.volume = DB.audio.volume;
     el.play().catch(()=>{ /* يتطلب بعض المتصفحات تفاعل المستخدم — الزر نفسه يوفر ذلك */ });
-    gsap.to(el, { volume: DB.audio.volume, duration: 2.5, ease: 'power2.in' });
 }
 function saveData(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
