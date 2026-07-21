@@ -54,7 +54,7 @@
     }
 
     #globe-container {
-        position: fixed; inset: 0; z-index: 2;
+        position: fixed; inset: 0; z-index: 2; pointer-events: none;
         opacity: 0; transition: opacity 1.6s ease;
     }
     #globe-container.show { opacity: 1; }
@@ -136,12 +136,12 @@
         position: fixed; inset: 0; z-index: 5; display: none; opacity: 0;
         flex-direction: column; align-items: center; justify-content: center;
         background: radial-gradient(circle at center, rgba(17,10,31,0.85) 0%, rgba(5,5,10,0.6) 100%);
-        padding: 1rem;
+        padding: 1rem; overflow-y: auto; overflow-x: hidden;
     }
 
     .orbit-wrap {
-        position: relative; width: min(820px, 96vw); aspect-ratio: 1/1;
-        perspective: 1100px; margin: 0 auto;
+        position: relative; width: min(820px, 92vw, 60vh); aspect-ratio: 1/1;
+        perspective: 1100px; margin: 0 auto; flex-shrink: 0;
     }
     #galaxyTilt {
         position: relative; width: 100%; height: 100%;
@@ -872,10 +872,12 @@ function startZoomJourney(){
     if (isJourneyStarted) return;
     isJourneyStarted = true;
 
-    playThemeAudio();
-    gsap.to('#intro-ui', { opacity:0, duration:0.5, pointerEvents:'none' });
+    gsap.to('#intro-ui', {
+        opacity:0, duration:0.5, pointerEvents:'none',
+        onComplete: () => { document.getElementById('intro-ui').style.display = 'none'; }
+    });
 
-    if (!hailMap){ setTimeout(initGalaxy, 500); return; }
+    if (!hailMap){ playThemeAudio(); setTimeout(initGalaxy, 500); return; }
 
     globeEl.classList.add('show');
     document.getElementById('intro-skip').classList.add('show');
@@ -883,6 +885,7 @@ function startZoomJourney(){
 
     journeyTimers.push(setTimeout(() => {
         showHailCaption(2);
+        playThemeAudio();
         hailMap.flyTo({ center:[45, 23], zoom:3.6, duration:3200, essential:true });
     }, 1300));
 
