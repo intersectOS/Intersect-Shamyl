@@ -689,6 +689,56 @@ function loadData(){
     return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 
+/* ---- مزامنة Supabase — قاعدة بيانات مشتركة لجميع الزوار/الأجهزة ---- */
+const SUPABASE_URL = 'https://mvsrhundpfbxkbseqqnn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im12c3JodW5kcGZieGtic2VxcW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MDg1NjYsImV4cCI6MjEwMDE4NDU2Nn0.aWkxGWp8aGxtIz7UGRvDyWEbAPSxz-_zQk--SNF34zM';
+const SUPABASE_TABLE = 'hail_platform_data';
+const SUPABASE_ROW_ID = 'main';
+const sbHeaders = {
+    apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json'
+};
+
+async function fetchRemoteData(){
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=data`, { headers: sbHeaders });
+        if (!res.ok) throw new Error('fetch failed: ' + res.status);
+        const rows = await res.json();
+        if (rows.length && rows[0].data && rows[0].data.sectors && rows[0].data.projects){
+            DB = rows[0].data;
+            if (!DB.audio) DB.audio = JSON.parse(JSON.stringify(DEFAULT_DATA.audio));
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); } catch(e){}
+        } else {
+            // لا يوجد صف بعد على السيرفر — أول تشغيل: نزرع البيانات الحالية
+            await pushRemoteData();
+        }
+    } catch(e){
+        console.warn('تعذر تحميل البيانات من Supabase — استخدام النسخة المحلية بالمتصفح', e);
+    }
+}
+async function pushRemoteData(){
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+            method: 'POST',
+            headers: { ...sbHeaders, Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify({ id: SUPABASE_ROW_ID, data: DB, updated_at: new Date().toISOString() })
+        });
+        if (!res.ok) throw new Error('push failed: ' + res.status);
+    } catch(e){
+        console.warn('تعذر حفظ البيانات على Supabase — التعديل محفوظ محلياً فقط بهذا المتصفح', e);
+        showToast('تعذر المزامنة مع السيرفر — التعديل محفوظ محلياً بس');
+    }
+}
+
+const dbReadyPromise = fetchRemoteData().then(() => {
+    applyAudioSettings();
+    if (document.getElementById('admin-panel').style.display === 'flex') renderAdminBody();
+    refreshPublicViews();
+});
+function waitForData(timeoutMs = 4000){
+    return Promise.race([ dbReadyPromise, new Promise(resolve => setTimeout(resolve, timeoutMs)) ]);
+}
+
 /* ---- الصوت الخلفي ---- */
 function applyAudioSettings(){
     const el = document.getElementById('bgAudio');
@@ -705,6 +755,7 @@ function playThemeAudio(){
 function saveData(){
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
     catch(e){ showToast('تعذر الحفظ محلياً'); }
+    pushRemoteData();
 }
 async function sha256(str){
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -1122,7 +1173,8 @@ function initHashtags(){
     });
 }
 
-function initGalaxy(){
+async function initGalaxy(){
+    await waitForData();
     const gView = document.getElementById('galaxy-view');
     gView.style.display = 'flex';
     buildGalaxySvg();
@@ -1200,6 +1252,7 @@ function openLogin(){
 function closeModal(id){ document.getElementById(id).style.display = 'none'; }
 
 async function doLogin(){
+    await waitForData();
     const pass = document.getElementById('loginPass').value;
     const hash = await sha256(pass);
     if (hash === DB.passHash){
@@ -1227,7 +1280,8 @@ function refreshPublicViews(){
     if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId) openSector(currentSectorId);
 }
 
-function openAdmin(){
+async function openAdmin(){
+    await waitForData();
     document.getElementById('admin-panel').style.display = 'flex';
     switchTab('overview');
 }
