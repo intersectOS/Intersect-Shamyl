@@ -204,6 +204,24 @@
         text-shadow: 0 0 24px rgba(94,53,177,0.35);
     }
 
+    /* انفجار الكلمات المتطايرة — طبقة انتقالية غير تفاعلية دائماً بأي حال */
+    #word-burst {
+        position: fixed; inset: 0; z-index: 15; pointer-events: none !important;
+        overflow: hidden; opacity: 0;
+    }
+    .screen-flash { position: absolute; inset: 0; background: #fff; opacity: 0; mix-blend-mode: screen; }
+    .word-burst-flash {
+        position: absolute; top: 50%; left: 50%; width: 60px; height: 60px;
+        margin: -30px 0 0 -30px; border-radius: 50%;
+        background: radial-gradient(circle, #fff 0%, var(--intersect-gold) 30%, var(--shamael-orange) 55%, transparent 75%);
+        opacity: 0; transform: scale(0);
+    }
+    .flying-word {
+        position: absolute; white-space: nowrap; font-family: var(--ff-display); font-weight: 700;
+        color: #fff; opacity: 0; user-select: none; transform: translate(-50%,-50%);
+        text-shadow: 0 0 26px rgba(212,175,55,0.85), 0 0 55px rgba(0,172,193,0.45);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         #galaxyTilt, .nebula { animation: none; }
     }
@@ -497,6 +515,12 @@
 <div id="hail-cinematic-text">حائل عالمية</div>
 <div id="hail-cinematic-sub">HAIL GOES GLOBAL · CRAZY DREAM</div>
 
+<!-- 3.5 انفجار الكلمات المتطايرة — الجسر بين الرحلة ومجرة القطاعات -->
+<div id="word-burst">
+    <div class="screen-flash"></div>
+    <div class="word-burst-flash"></div>
+    <div id="wordBurstWords"></div>
+</div>
 
 <!-- 4. طبقة الهاشتاقات السابحة -->
 <div class="hashtag-layer" id="hashtagLayer"></div>
@@ -910,6 +934,64 @@ function showHailCaption(n){
 let journeyTimers = [];
 function clearJourneyTimers(){ journeyTimers.forEach(t => clearTimeout(t)); journeyTimers = []; }
 
+function playWordBurst(){
+    return new Promise(resolve => {
+        const layer = document.getElementById('word-burst');
+        const wrap = document.getElementById('wordBurstWords');
+        if (!layer || !wrap){ resolve(); return; }
+
+        let settled = false;
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            layer.style.opacity = '0';
+            layer.style.display = 'none';
+            wrap.innerHTML = '';
+            resolve();
+        };
+
+        // شبكة أمان — الطبقة أصلاً pointer-events:none دائماً، وهذا يضمن كمان عدم تعليق الانتقال
+        const safety = setTimeout(finish, 7000);
+
+        if (reduceMotion){ layer.style.display = 'none'; resolve(); return; }
+
+        const words = (DB.hashtags && DB.hashtags.length) ? DB.hashtags : ['حائل عالمية'];
+        layer.style.display = 'block';
+        gsap.set(layer, { opacity: 1 });
+        wrap.innerHTML = '';
+
+        const tl = gsap.timeline({ onComplete: () => { clearTimeout(safety); finish(); } });
+        const stagger = 0.24;
+
+        words.forEach((tag, i) => {
+            const el = document.createElement('span');
+            el.className = 'flying-word';
+            el.textContent = tag;
+            const big = window.innerWidth >= 768;
+            el.style.fontSize = (big ? (1.9 + Math.random()*1.5) : (1.2 + Math.random()*0.8)) + 'rem';
+            el.style.left = (Math.random()*64 + 18) + '%';
+            el.style.top = (Math.random()*64 + 18) + '%';
+            wrap.appendChild(el);
+
+            const t0 = i * stagger;
+            tl.fromTo(el,
+                { opacity:0, scale:0.5, rotate: (Math.random()*36 - 18) },
+                { opacity:1, scale:1, rotate:0, duration:0.5, ease:'back.out(2.2)' },
+                t0
+            );
+            tl.to(el, { x: gsap.utils.random(-70,70), y: gsap.utils.random(-50,50), duration:1, ease:'sine.inOut' }, t0+0.1);
+            tl.to(el, { opacity:0, scale:1.25, duration:0.35, ease:'power1.in' }, t0+0.85);
+        });
+
+        const burstAt = words.length * stagger + 0.35;
+        tl.to('.word-burst-flash', { opacity:1, scale:1, duration:0.22, ease:'power1.in' }, burstAt);
+        tl.to('.screen-flash', { opacity:0.88, duration:0.14, ease:'power1.in' }, burstAt+0.1);
+        tl.to('.word-burst-flash', { scale:46, opacity:0, duration:1.1, ease:'power3.out' }, burstAt+0.22);
+        tl.to('.screen-flash', { opacity:0, duration:0.6, ease:'power2.out' }, burstAt+0.26);
+        tl.to(layer, { opacity:0, duration:0.5 }, burstAt+0.95);
+    });
+}
+
 function finishJourney(){
     if (!document.getElementById('galaxy-view')) return;
     clearJourneyTimers();
@@ -923,7 +1005,7 @@ function finishJourney(){
         });
         gsap.to('#globe-container', {
             opacity:0, duration:1.4,
-            onComplete: () => { globeEl.classList.remove('show'); initGalaxy(); }
+            onComplete: () => { globeEl.classList.remove('show'); playWordBurst().then(initGalaxy); }
         });
     }, 2400);
 }
