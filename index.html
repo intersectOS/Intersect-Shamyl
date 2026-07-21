@@ -11,8 +11,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
 <style>
     :root {
@@ -54,8 +55,9 @@
 
     #globe-container {
         position: fixed; inset: 0; z-index: 2;
-        display: flex; justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 1.6s ease;
     }
+    #globe-container.show { opacity: 1; }
 
     /* ============ واجهة الافتتاح ============ */
     .ui-layer {
@@ -399,6 +401,51 @@
     .switch input:checked + .slider-toggle { background: var(--shamael-teal); border-color: var(--shamael-teal); }
     .switch input:checked + .slider-toggle::before { transform: translateX(-20px); }
 
+    /* الرحلة السينمائية — من الفضاء إلى موقعنا الحقيقي (كرة أرضية حقيقية بصور قمر صناعي) */
+    #globe-container .maplibregl-ctrl-logo,
+    #globe-container .maplibregl-ctrl-attrib { display: none !important; }
+
+    #hail-caption {
+        position: fixed; bottom: 16%; left: 50%; transform: translateX(-50%);
+        text-align: center; z-index: 12; pointer-events: none; width: 90%; max-width: 34rem;
+    }
+    #hail-caption .cap-line {
+        opacity: 0; transition: opacity 1s ease, transform 1s ease; transform: translateY(14px);
+        font-family: var(--ff-display); color: var(--text); font-size: clamp(1.4rem, 4vw, 2.1rem);
+        text-shadow: 0 2px 24px rgba(0,0,0,0.85);
+    }
+    #hail-caption .cap-line.show { opacity: 1; transform: translateY(0); }
+
+    #intro-skip {
+        position: fixed; top: 22px; left: 22px; z-index: 21;
+        color: var(--text); font-family: var(--ff-main); font-size: 0.78rem; font-weight: 700;
+        border: 1px solid var(--glass-border); padding: 0.55rem 1.1rem; border-radius: 100px;
+        background: var(--glass-bg); backdrop-filter: blur(8px); opacity: 0; pointer-events: none;
+        transition: opacity 0.4s ease, border-color 0.3s ease;
+    }
+    #intro-skip.show { opacity: 1; pointer-events: auto; }
+    #intro-skip:hover { border-color: var(--intersect-gold); color: var(--intersect-gold); }
+
+    .hail-pin {
+        width: 24px; height: 24px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+        background: linear-gradient(135deg, var(--intersect-gold), var(--shamael-orange));
+        box-shadow: 0 0 0 7px rgba(212,175,55,0.18), 0 0 20px rgba(212,175,55,0.6);
+        animation: hailPinBounce 0.8s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes hailPinBounce {
+        0% { transform: translateY(-44px) rotate(-45deg) scale(0.4); opacity: 0; }
+        60% { transform: translateY(4px) rotate(-45deg) scale(1.12); opacity: 1; }
+        100% { transform: translateY(0) rotate(-45deg) scale(1); }
+    }
+    .hail-pin-label {
+        position: absolute; top: -48px; left: 50%; transform: translateX(-50%) rotate(45deg);
+        white-space: nowrap; background: var(--glass-bg); border: 1px solid var(--intersect-gold);
+        color: var(--text); font-family: var(--ff-display); font-size: 1rem; font-weight: 700;
+        padding: 0.35rem 1rem; border-radius: 8px; backdrop-filter: blur(8px);
+        opacity: 0; transition: opacity 0.8s ease 0.3s;
+    }
+    .hail-pin-label.show { opacity: 1; }
+
     @media (prefers-reduced-motion: reduce) {
         .btn-glow::after { animation: none; }
     }
@@ -416,8 +463,16 @@
 <canvas id="starfield"></canvas>
 <div class="noise-overlay"></div>
 
-<!-- 1. مشهد الكرة الأرضية -->
+<!-- 1. مشهد الكرة الأرضية — كرة حقيقية بصور قمر صناعي (MapLibre GL) -->
 <div id="globe-container"></div>
+
+<!-- 1.5 تعليقات الرحلة: الأرض ← السعودية ← حائل -->
+<div id="hail-caption">
+    <p class="cap-line" data-cap="1">الأرض</p>
+    <p class="cap-line" data-cap="2">المملكة العربية السعودية</p>
+    <p class="cap-line" data-cap="3">حائل</p>
+</div>
+<button id="intro-skip" onclick="skipIntroJourney()">تخطي المقدمة ←</button>
 
 <!-- 2. واجهة الافتتاح -->
 <div class="ui-layer" id="intro-ui">
@@ -441,6 +496,7 @@
 <!-- 3. الرسالة السينمائية -->
 <div id="hail-cinematic-text">حائل عالمية</div>
 <div id="hail-cinematic-sub">HAIL GOES GLOBAL · CRAZY DREAM</div>
+
 
 <!-- 4. طبقة الهاشتاقات السابحة -->
 <div class="hashtag-layer" id="hashtagLayer"></div>
@@ -734,114 +790,84 @@ setInterval(()=>{ if (Math.random()<0.5) spawnShootingStar(); }, 3400);
 window.addEventListener('resize', initStarfield);
 
 /* ==========================================================
-   2. مشهد الكرة الأرضية (Three.js)
+   2. مشهد الكرة الأرضية — كرة حقيقية بصور قمر صناعي (MapLibre GL)
    ========================================================== */
-const container = document.getElementById('globe-container');
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.z = 320;
-
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-container.appendChild(renderer.domElement);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const sunLight = new THREE.DirectionalLight(0xfff4e0, 1.6);
-sunLight.position.set(120, 60, 120);
-scene.add(sunLight);
-const pl1 = new THREE.PointLight(0x5e35b1, 0.6, 500); pl1.position.set(100,100,150); scene.add(pl1);
-const pl2 = new THREE.PointLight(0x00acc1, 0.5, 500); pl2.position.set(-100,-100,150); scene.add(pl2);
-
-const globeGroup = new THREE.Group(); scene.add(globeGroup);
-const radius = 60;
-
-// كرة أرضية حقيقية بخرائط قمر صناعي (Blue Marble) + تضاريس + انعكاس مائي
-const texLoader = new THREE.TextureLoader();
-const earthMap = texLoader.load('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg');
-const earthBump = texLoader.load('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png');
-const earthSpec = texLoader.load('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-water.png');
-if ('colorSpace' in earthMap) earthMap.colorSpace = THREE.SRGBColorSpace;
-else earthMap.encoding = THREE.sRGBEncoding;
-
-const earthMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 96, 96),
-    new THREE.MeshPhongMaterial({
-        map: earthMap, bumpMap: earthBump, bumpScale: 0.9,
-        specularMap: earthSpec, specular: new THREE.Color(0x445566), shininess: 9
-    })
-);
-globeGroup.add(earthMesh);
-
-// توهج الغلاف الجوي (Fresnel glow)
-const atmoMat = new THREE.ShaderMaterial({
-    uniforms: { glowColor: { value: new THREE.Color(0x4fc3f7) } },
-    vertexShader: `
-        varying float intensity;
-        void main(){
-            vec3 vNormal = normalize(normalMatrix * normal);
-            vec3 vViewDir = normalize(-(modelViewMatrix * vec4(position,1.0)).xyz);
-            intensity = pow(0.68 - dot(vNormal, vViewDir), 2.6);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }`,
-    fragmentShader: `
-        varying float intensity;
-        uniform vec3 glowColor;
-        void main(){ gl_FragColor = vec4(glowColor, 1.0) * intensity; }`,
-    side: THREE.BackSide, blending: THREE.AdditiveBlending, transparent: true
-});
-globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(radius*1.045, 64, 64), atmoMat));
-
-// علامة حائل — الموقع الدقيق (27.5055724, 41.6981313)
-const hailLat = 27.5055724, hailLon = 41.6981313;
-const phi = (90-hailLat)*(Math.PI/180);
-const theta = (hailLon+180)*(Math.PI/180);
-const markerPos = new THREE.Vector3(
-    -(radius*1.05*Math.sin(phi)*Math.cos(theta)),
-    (radius*1.05*Math.cos(phi)),
-    (radius*1.05*Math.sin(phi)*Math.sin(theta))
-);
-const markerGroup = new THREE.Group();
-markerGroup.position.copy(markerPos);
-markerGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), markerPos.clone().normalize());
-globeGroup.add(markerGroup);
-
-const ring = new THREE.Mesh(
-    new THREE.RingGeometry(1, 4, 32),
-    new THREE.MeshBasicMaterial({ color:0xfb8c00, side:THREE.DoubleSide, transparent:true, opacity:0.8 })
-);
-ring.rotation.x = Math.PI/2; markerGroup.add(ring);
-const ring2 = new THREE.Mesh(
-    new THREE.RingGeometry(0.4, 1.4, 32),
-    new THREE.MeshBasicMaterial({ color:0xd4af37, side:THREE.DoubleSide, transparent:true, opacity:0.9 })
-);
-ring2.rotation.x = Math.PI/2; markerGroup.add(ring2);
-
-gsap.to(ring.scale, { x:2.5, y:2.5, z:2.5, duration:1.5, repeat:-1, yoyo:true, ease:'power1.inOut' });
-gsap.to(ring.material, { opacity:0, duration:1.5, repeat:-1, yoyo:true, ease:'power1.inOut' });
-
+const globeEl = document.getElementById('globe-container');
+const HAIL_LAT = 27.5055724, HAIL_LNG = 41.6981313;
 let isJourneyStarted = false;
-(function animate(){
-    requestAnimationFrame(animate);
-    if (!isJourneyStarted){
-        globeGroup.rotation.y += 0.002;
-        globeGroup.rotation.x = 0.2;
-    }
-    renderer.render(scene, camera);
-})();
+let hailMap = null;
 
-function fitCamera(){
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    if (!isJourneyStarted) camera.position.z = window.innerWidth < 768 ? 420 : 320;
+try {
+    hailMap = new maplibregl.Map({
+        container: globeEl,
+        style: {
+            version: 8,
+            sources: {
+                satellite: {
+                    type: 'raster',
+                    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                    tileSize: 256,
+                    attribution: 'Esri, Maxar, Earthstar Geographics'
+                }
+            },
+            layers: [
+                { id:'bg', type:'background', paint:{ 'background-color':'#05050a' } },
+                { id:'satellite', type:'raster', source:'satellite' }
+            ]
+        },
+        center: [30, 15],
+        zoom: 0.7,
+        pitch: 0,
+        bearing: 0,
+        attributionControl: false,
+        interactive: false
+    });
+    hailMap.on('load', () => { try { hailMap.setProjection({ type:'globe' }); } catch(e){} });
+    hailMap.on('error', () => { /* قد تفشل بعض البلاطات بدون اتصال — الرحلة تكمل أو تتخطى تلقائياً */ });
+} catch(e){ hailMap = null; }
+
+function showHailCaption(n){
+    document.querySelectorAll('#hail-caption .cap-line').forEach(el => {
+        el.classList.toggle('show', el.dataset.cap === String(n));
+    });
 }
-window.addEventListener('resize', fitCamera);
-if (window.innerWidth < 768) camera.position.z = 420;
 
 /* ==========================================================
-   3. الرحلة السينمائية
+   3. الرحلة السينمائية — من الفضاء إلى موقعنا بالضبط
    ========================================================== */
+let journeyTimers = [];
+function clearJourneyTimers(){ journeyTimers.forEach(t => clearTimeout(t)); journeyTimers = []; }
+
+function finishJourney(){
+    if (!document.getElementById('galaxy-view')) return;
+    clearJourneyTimers();
+    gsap.to('#hail-caption', { opacity:0, duration:0.6 });
+    gsap.to('#intro-skip', { opacity:0, duration:0.4, onComplete:()=>document.getElementById('intro-skip').classList.remove('show') });
+    gsap.to('#hail-cinematic-text', { opacity:1, scale:1, duration:1.4, ease:'back.out(1.5)' });
+    gsap.to('#hail-cinematic-sub', { opacity:0.85, duration:1, ease:'power2.out', delay:0.5 });
+    setTimeout(() => {
+        gsap.to(['#hail-cinematic-text', '#hail-cinematic-sub'], {
+            opacity:0, scale:1.4, filter:'blur(10px)', duration:1, ease:'power2.in'
+        });
+        gsap.to('#globe-container', {
+            opacity:0, duration:1.4,
+            onComplete: () => { globeEl.classList.remove('show'); initGalaxy(); }
+        });
+    }, 2400);
+}
+
+function skipIntroJourney(){
+    if (!isJourneyStarted) return;
+    clearJourneyTimers();
+    document.getElementById('intro-skip').classList.remove('show');
+    gsap.to('#hail-caption', { opacity:0, duration:0.3 });
+    gsap.to(['#hail-cinematic-text', '#hail-cinematic-sub'], { opacity:0, duration:0.3 });
+    gsap.to('#globe-container', {
+        opacity:0, duration:0.6,
+        onComplete: () => { globeEl.classList.remove('show'); initGalaxy(); }
+    });
+}
+
 function startZoomJourney(){
     if (isJourneyStarted) return;
     isJourneyStarted = true;
@@ -849,22 +875,45 @@ function startZoomJourney(){
     playThemeAudio();
     gsap.to('#intro-ui', { opacity:0, duration:0.5, pointerEvents:'none' });
 
-    const targetRotY = -theta + Math.PI/2;
-    const targetRotX = phi - Math.PI/2;
-    const tl = gsap.timeline();
+    if (!hailMap){ setTimeout(initGalaxy, 500); return; }
 
-    tl.to(globeGroup.rotation, { y:targetRotY, x:targetRotX, duration:2.2, ease:'power2.inOut' }, 0);
-    tl.to(camera.position, { z:70, duration:2.8, ease:'power3.in' }, 0.4);
-    tl.to('#hail-cinematic-text', { opacity:1, scale:1, duration:1.4, ease:'back.out(1.5)' }, 2.6);
-    tl.to('#hail-cinematic-sub', { opacity:0.85, duration:1, ease:'power2.out' }, 3.2);
-    tl.to(['#hail-cinematic-text', '#hail-cinematic-sub'], {
-        opacity:0, scale:1.4, filter:'blur(10px)', duration:1, ease:'power2.in'
-    }, 5.0);
-    tl.to('#globe-container', {
-        opacity:0, duration:1.4,
-        onComplete: () => { container.style.display='none'; initGalaxy(); }
-    }, 5.0);
+    globeEl.classList.add('show');
+    document.getElementById('intro-skip').classList.add('show');
+    showHailCaption(1);
+
+    journeyTimers.push(setTimeout(() => {
+        showHailCaption(2);
+        hailMap.flyTo({ center:[45, 23], zoom:3.6, duration:3200, essential:true });
+    }, 1300));
+
+    journeyTimers.push(setTimeout(() => {
+        showHailCaption(3);
+        hailMap.flyTo({ center:[41.72, 27.55], zoom:9.6, duration:2800, essential:true });
+    }, 4900));
+
+    journeyTimers.push(setTimeout(() => {
+        showHailCaption(0);
+        hailMap.flyTo({ center:[HAIL_LNG, HAIL_LAT], zoom:17.6, pitch:60, bearing:-20, duration:3400, essential:true });
+    }, 8000));
+
+    journeyTimers.push(setTimeout(() => {
+        const pinWrap = document.createElement('div');
+        pinWrap.innerHTML = '<div class="hail-pin"><div class="hail-pin-label">شمائل × تقاطع</div></div>';
+        new maplibregl.Marker({ element: pinWrap.firstChild, anchor:'bottom' })
+            .setLngLat([HAIL_LNG, HAIL_LAT]).addTo(hailMap);
+        setTimeout(() => {
+            const lbl = pinWrap.querySelector('.hail-pin-label');
+            if (lbl) lbl.classList.add('show');
+        }, 200);
+    }, 11500));
+
+    journeyTimers.push(setTimeout(finishJourney, 12800));
+
+    // شبكة أمان: لا نُبقي الزائر عالقاً إذا تعذّر تحميل بلاطات الأقمار الصناعية
+    journeyTimers.push(setTimeout(() => { if (document.getElementById('galaxy-view').style.display !== 'flex') finishJourney(); }, 20000));
 }
+
+window.addEventListener('resize', () => { if (hailMap) hailMap.resize(); });
 
 /* ==========================================================
    4. مجرة القطاعات — محرك المشهد الكوني
