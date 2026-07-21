@@ -580,6 +580,27 @@
     </div>
 </div>
 
+<!-- نافذة إضافة/تعديل قطاع -->
+<div class="modal-overlay" id="sectorModal">
+    <div class="modal-box" style="width:min(480px,100%); max-height:90vh; overflow-y:auto;">
+        <h3 class="text-xl font-black text-white" id="sectorModalTitle">قطاع جديد</h3>
+        <input type="hidden" id="sm-id">
+        <label class="field-label">اسم القطاع</label>
+        <input class="field-input" id="sm-name" placeholder="مثال: التعليم والتدريب">
+        <label class="field-label">الوصف</label>
+        <textarea class="field-textarea" id="sm-desc" placeholder="وصف موجز لهذا القطاع الاستراتيجي"></textarea>
+        <label class="field-label">لون الكوكب</label>
+        <div class="flex items-center gap-3">
+            <input type="color" id="sm-color" value="#00acc1" style="width:52px; height:40px; border-radius:10px; border:1px solid var(--glass-border); background:transparent; cursor:pointer;">
+            <span class="text-xs text-gray-500">يظهر بلون المدار والكوكب وبطاقاته</span>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button class="btn-primary flex-1" onclick="saveSector()">حفظ</button>
+            <button class="btn-ghost" onclick="closeModal('sectorModal')">إلغاء</button>
+        </div>
+    </div>
+</div>
+
 <!-- نافذة إضافة تحديث اجتماع -->
 <div class="modal-overlay" id="updateModal">
     <div class="modal-box">
@@ -611,6 +632,7 @@
     </div>
     <div class="admin-tabs">
         <button class="admin-tab active" data-tab="overview" onclick="switchTab('overview')">نظرة عامة</button>
+        <button class="admin-tab" data-tab="sectors" onclick="switchTab('sectors')">القطاعات</button>
         <button class="admin-tab" data-tab="projects" onclick="switchTab('projects')">المشاريع</button>
         <button class="admin-tab" data-tab="meetings" onclick="switchTab('meetings')">الاجتماع الأسبوعي</button>
         <button class="admin-tab" data-tab="settings" onclick="switchTab('settings')">الإعدادات</button>
@@ -1288,7 +1310,10 @@ function adminLogout(){
 }
 function refreshPublicViews(){
     if (document.getElementById('galaxy-view').style.display === 'flex') buildGalaxySvg();
-    if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId) renderProjectCards(currentSectorId);
+    if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId){
+        if (DB.sectors.find(s=>s.id===currentSectorId)) renderProjectCards(currentSectorId);
+        else closeSectorDetails();
+    }
 }
 
 async function openAdmin(){
@@ -1308,6 +1333,7 @@ function switchTab(tab){
 function renderAdminBody(){
     const body = document.getElementById('adminBody');
     if (activeTab === 'overview') return renderOverview(body);
+    if (activeTab === 'sectors') return renderSectors(body);
     if (activeTab === 'projects') return renderProjects(body);
     if (activeTab === 'meetings') return renderMeetings(body);
     if (activeTab === 'settings') return renderSettings(body);
@@ -1344,6 +1370,79 @@ function renderOverview(body){
             <h4 class="font-black text-white mb-1">القيمة المضافة للشراكة</h4>
             <p class="text-sm text-gray-400 leading-relaxed">هذه اللوحة هي المنصة الإلكترونية المشتركة المنصوص عليها في مذكرة التفاهم (البند العاشر): قاعدة بيانات الفرص والمشاريع، لوحات متابعة الحالة، توثيق الاجتماعات الدورية وقراراتها، والتحكم بما يُعرض للعامة تسويقياً عبر قنوات تقاطع ومنصة Own in Saudi وما يبقى داخلياً.</p>
         </div>`;
+}
+
+/* ---- القطاعات ---- */
+const SECTOR_PALETTE = ['#00acc1','#fb8c00','#43a047','#5e35b1','#8bc34a','#d4af37','#e53935','#3949ab','#00897b','#f06292'];
+
+function renderSectors(body){
+    let html = `<div class="admin-row mb-4">
+        <p class="text-sm text-gray-400">أضف قطاعاً استراتيجياً جديداً، أو عدّل اسمه ولونه ووصفه، أو احذفه.</p>
+        <button class="btn-primary" onclick="openSectorModal()">+ قطاع جديد</button>
+    </div>`;
+
+    DB.sectors.forEach(s => {
+        const count = DB.projects.filter(p=>p.sectorId===s.id).length;
+        html += `<div class="admin-card">
+            <div class="admin-row">
+                <div style="min-width:0">
+                    <h4 class="font-black" style="color:${s.color}">● ${s.name}</h4>
+                    <p class="text-xs text-gray-500 mt-1">${s.desc || 'بدون وصف'}</p>
+                    <span class="text-xs text-gray-600">${count} ${count===1?'مشروع':'مشاريع'}</span>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <button class="btn-mini" onclick="openSectorModal('${s.id}')">تعديل</button>
+                    <button class="btn-danger" onclick="deleteSector('${s.id}')">حذف</button>
+                </div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+function openSectorModal(id){
+    const modal = document.getElementById('sectorModal');
+    const s = id ? DB.sectors.find(x=>x.id===id) : null;
+    document.getElementById('sectorModalTitle').textContent = s ? 'تعديل القطاع' : 'قطاع جديد';
+    document.getElementById('sm-id').value = s?.id || '';
+    document.getElementById('sm-name').value = s?.name || '';
+    document.getElementById('sm-desc').value = s?.desc || '';
+    document.getElementById('sm-color').value = s?.color || SECTOR_PALETTE[DB.sectors.length % SECTOR_PALETTE.length];
+    modal.style.display = 'flex';
+}
+
+function saveSector(){
+    const id = document.getElementById('sm-id').value;
+    const name = document.getElementById('sm-name').value.trim();
+    if (!name){ showToast('اكتب اسم القطاع'); return; }
+    const data = {
+        name,
+        desc: document.getElementById('sm-desc').value.trim(),
+        color: document.getElementById('sm-color').value
+    };
+    if (id){
+        Object.assign(DB.sectors.find(s=>s.id===id), data);
+    } else {
+        DB.sectors.push({ id:'s'+Date.now(), ...data });
+    }
+    saveData(); closeModal('sectorModal'); renderAdminBody();
+    refreshPublicViews();
+    showToast('تم حفظ القطاع');
+}
+
+function deleteSector(id){
+    const s = DB.sectors.find(x=>x.id===id);
+    if (!s) return;
+    const linked = DB.projects.filter(p=>p.sectorId===id);
+    const msg = linked.length
+        ? `حذف قطاع «${s.name}» بيحذف معه ${linked.length} ${linked.length===1?'مشروع':'مشاريع'} مرتبطة فيه نهائياً. متأكد؟`
+        : `حذف قطاع «${s.name}» نهائياً؟`;
+    if (!confirm(msg)) return;
+    DB.sectors = DB.sectors.filter(x=>x.id!==id);
+    DB.projects = DB.projects.filter(p=>p.sectorId!==id);
+    saveData(); renderAdminBody();
+    refreshPublicViews();
+    showToast('تم حذف القطاع');
 }
 
 /* ---- المشاريع ---- */
