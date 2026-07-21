@@ -1188,10 +1188,9 @@ async function initGalaxy(){
    ========================================================== */
 let currentSectorId = null;
 
-function openSector(sectorId){
+function renderProjectCards(sectorId){
     const sector = DB.sectors.find(s=>s.id===sectorId);
     if (!sector) return;
-    currentSectorId = sectorId;
 
     document.getElementById('sd-title').textContent = sector.name;
     document.getElementById('sd-title').style.color = sector.color;
@@ -1222,12 +1221,24 @@ function openSector(sectorId){
         if (hasLink) card.onclick = () => window.open(proj.link, '_blank', 'noopener');
         wrap.appendChild(card);
     });
+}
+
+function openSector(sectorId){
+    const sector = DB.sectors.find(s=>s.id===sectorId);
+    if (!sector) return;
+    currentSectorId = sectorId;
+
+    renderProjectCards(sectorId);
 
     const detailsView = document.getElementById('sector-details');
     detailsView.style.display = 'flex';
+    gsap.killTweensOf('.project-card');
     gsap.to('#orbitWrap', { scale:2, opacity:0, duration:0.6, ease:'power2.in' });
     gsap.to(detailsView, { opacity:1, duration:0.5, delay:0.3, ease:'power2.out' });
-    gsap.from('.project-card', { y:40, opacity:0, duration:0.6, stagger:0.08, delay:0.45, ease:'back.out(1.2)' });
+    gsap.fromTo('.project-card',
+        { opacity:0, y:40 },
+        { opacity:1, y:0, duration:0.6, stagger:0.08, delay:0.45, ease:'back.out(1.2)' }
+    );
 }
 
 function closeSectorDetails(){
@@ -1277,7 +1288,7 @@ function adminLogout(){
 }
 function refreshPublicViews(){
     if (document.getElementById('galaxy-view').style.display === 'flex') buildGalaxySvg();
-    if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId) openSector(currentSectorId);
+    if (document.getElementById('sector-details').style.display === 'flex' && currentSectorId) renderProjectCards(currentSectorId);
 }
 
 async function openAdmin(){
